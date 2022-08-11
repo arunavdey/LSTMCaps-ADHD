@@ -8,17 +8,17 @@ It is normal to be struggling with focusing and behaving from time to time, but 
 
 The usual pattern observed in people with ADHD are the following:
 
--   Inattention: This isn't just children usually assumed to be resistant or unintelligible, this is a symptom that manifests in ways such as having difficulty in focusing for long periods of time, working on only one task at a time, or staying coordinated.
--   Hyperactivity: This can mean inability to stay in one place without moving, being noisy without caring about the appropriateness of the situation, unbridled fidgeting, talking constantly without taking a break, etc.
--   Impulsivity: Includes abandoning one task for another, tendency to act without regard for consequences (often at an expense of personal safety). This can also mean wanting to appease everyone or not waiting for anyone’s approval before performing a critical task, and interrupting others without letting them talk when questioned.
+-   **Inattention**: This isn't just children usually assumed to be resistant or unintelligible, this is a symptom that manifests in ways such as having difficulty in focusing for long periods of time, working on only one task at a time, or staying coordinated.
+-   **Hyperactivity**: This can mean inability to stay in one place without moving, being noisy without caring about the appropriateness of the situation, unbridled fidgeting, talking constantly without taking a break, etc.
+-   **Impulsivity**: Includes abandoning one task for another, tendency to act without regard for consequences (often at an expense of personal safety). This can also mean wanting to appease everyone or not waiting for anyone’s approval before performing a critical task, and interrupting others without letting them talk when questioned.
 
 ######
 
 The following are three major forms of ADHD:
 
--   ADHD, combined type: This type includes both impulsiveness and hyperactivity, along with inattention and getting distracted easily
--   ADHD, impulsive/hyperactive type: This type includes only impulsiveness and inattention.
--   ADHD, inattentive and distractible type: This type includes only inattention and getting distracted easily.
+-   **ADHD, combined type**: This type includes both impulsiveness and hyperactivity, along with inattention and getting distracted easily
+-   **ADHD, impulsive/hyperactive type**: This type includes only impulsiveness and inattention.
+-   **ADHD, inattentive and distractible type**: This type includes only inattention and getting distracted easily.
 
 ######
 
