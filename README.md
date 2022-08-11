@@ -2,7 +2,7 @@
 
 Almost all children have behavioral problems. They may run around without caring about their surroundings, be incessantly loud, throw tantrums, refuse to wait for anyone else before their turn, and have problems doing their schoolwork. At other times, they may not pay attention to anyone else, instead choosing to live in their daydreams, and forgetting to complete all other tasks. <br><br>
 While this is usually the norm for most children, it is more than just a passing trend for some. Children with attention deficit hyperactivity disorder (ADHD) have frequent and/or severe behavior difficulties that interfere with their capacity to live regular lives. They usually have a lot of difficulty in getting along with other kids, their own family members, and any other passing stranger. This difficulty in paying attention also leads to a difficulty in learning. This can be very dangerous as some people can be quite impulsive. These children are often wrongly branded as just being bad or too impulsive all because they have problems controlling their behaviour.<br><br>
-It is normal to be struggling with focusing and behaving from time to time, but children with ADHD are not able to let go of these issues. If left unattended or ignored, these symptoms can carry on and become very severe. This can further lead to interference with education, friendships and familial relationships. If ADHD gets more critical due to being untreated, it can lead to significant, lifetime problems, getting to extremes that can include having run-ins with the law.<br><br>
+It is normal to be struggling with focusing and behaving from time to time, but children with ADHD are not able to let go of these issues. If left unattended or ignored, these symptoms can carry on and become very severe. This can further lead to interference with education, friendships and familial relationships. If ADHD gets more critical due to being untreated, it can lead to significant, lifetime problems, getting to extremes that can include having run-ins with the law.<br>
 
 ######
 
@@ -11,7 +11,6 @@ The usual pattern observed in people with ADHD are the following:
 -   Inattention: This isn't just children usually assumed to be resistant or unintelligible, this is a symptom that manifests in ways such as having difficulty in focusing for long periods of time, working on only one task at a time, or staying coordinated.
 -   Hyperactivity: This can mean inability to stay in one place without moving, being noisy without caring about the appropriateness of the situation, unbridled fidgeting, talking constantly without taking a break, etc.
 -   Impulsivity: Includes abandoning one task for another, tendency to act without regard for consequences (often at an expense of personal safety). This can also mean wanting to appease everyone or not waiting for anyone’s approval before performing a critical task, and interrupting others without letting them talk when questioned.
-     <!-- -->
 
 ######
 
@@ -20,7 +19,6 @@ The following are three major forms of ADHD:
 -   ADHD, combined type: This type includes both impulsiveness and hyperactivity, along with inattention and getting distracted easily
 -   ADHD, impulsive/hyperactive type: This type includes only impulsiveness and inattention.
 -   ADHD, inattentive and distractible type: This type includes only inattention and getting distracted easily.
-     <!-- -->
 
 ######
 
