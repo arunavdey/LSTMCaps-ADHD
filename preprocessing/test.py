@@ -1,19 +1,17 @@
 import json
 import os
-from utils.utils import getFilePaths
-from utils.utils import loadData
-from utils.utils import skullStrip
-from utils.utils import showScan
+from preprocessing.utils import getFilePaths, skullStrip, tiltCorrection, loadData, cropImage, showScan, addPadding, biasFieldCorrection, intensityNormalisation
+import SimpleITK as sitk
 
 with open('../filepath.json', 'r') as f:
     data = f.read()
     paths = json.loads(data)
 
-filepaths = getFilePaths(paths['data'], 'PaloAlto', functional = False)
+filepaths = getFilePaths(paths['data'], 'PaloAlto', functional=False)
 
-img_load = loadData(filepaths[0])
-showScan(img_load)
-# for file in filepaths:
-#     img_load = loadData(file)
-#     showScan(img_load)
-    
+img = loadData(filepaths[0], verbose=True)
+
+# intensityNormalisation(filepaths[0])
+
+load = loadData('/home/arunav/Assets/outputs/in_out.nii')
+showScan(load)
