@@ -10,6 +10,5 @@ with open('../filepath.json', 'r') as f:
 filepaths = getFilePaths(paths['data'], flag=1) # all .nii files inside PaloAlto
 
 smri = filepaths[0]
-
 preproc = preprocess(smri, 1, paths['outputs'])
 preproc.run()

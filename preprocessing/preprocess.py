@@ -18,66 +18,25 @@ tf.compat.v1.disable_v2_behavior()
 class preprocess:
     def __init__(self, path, flag=1, savePath=None):
         self.path = path # path to .nii; 3D for sMRI and 4D for fMRI
-        self.img = loadData(self.path, verbose=True) # 4D or 3D numpy array
+        self.img = loadData(self.path) # 4D or 3D numpy array
         self.flag = flag
 
         splitpath = path.split('/')
         subj = splitpath[-3]
         opdir = os.path.join(savePath, subj)
-        if os.path.exists(opdir):
-            shutil.rmtree(opdir)
-        os.mkdir(opdir)
-
+        if not os.path.exists(opdir):
+            os.mkdir(opdir)
         self.savePath = opdir
 
 
     def run(self):
-        # print("Running Intensity Normalisation\n")
-        # self.intensityNormalisation()
-        print("Running Skull Stripping\n")
+        self.img = self.intensityNormalisation()
         self.img = self.skullStrip()
-        print("Running Cropping\n")
-        self.img = self.cropImage()
-        print("Running Add Padding\n")
+        # self.img = self.cropImage()
         self.img = self.addPadding()
-        print(self.img.shape)
-
-        img_paths = saveAsPNG(self.savePath, self.img, flag = 1, tag = 'ss_c_pad')
-
-        # for ip in img_paths:
-        #     print(ip)
-            # ts = self.tissueSegment(ip) # 2D image
-            # for t in range(ts.shape[1]):
-            #     saveAsPNG(self.savePath, ts[:, t, :], flag = 1)
-            
-
-        # deleteDir(self.savePath)
-
-    def edgeDetect(self):
-        pass
-
-
-    def tissueSegment(self, img_path):
-        image = cv2.imread(img_path)
-        # print(img_path)
-
-        b,g,r = cv2.split(image)
-        b = cv2.equalizeHist(b)
-        g = cv2.equalizeHist(g)
-        r = cv2.equalizeHist(r)
-        equ = cv2.merge((b,g,r))
-        equ = cv2.cvtColor(equ,cv2.COLOR_BGR2RGB)
-
-        clahe = cv2.createCLAHE(clipLimit=6, tileGridSize=(16,16))
-        b,g,r = cv2.split(equ)
-        b = clahe.apply(b)
-        g = clahe.apply(g)
-        r = clahe.apply(r)
-        bgr = cv2.merge((b,g,r))
-        cl = cv2.cvtColor(bgr,cv2.COLOR_BGR2RGB, 0.5)
-
-        gray = cv2.cvtColor(cl, cv2.COLOR_BGR2GRAY, 0.5) 
-        return gray
+        self.biasFieldCorrection()
+        # self.tissueSegment()
+        # self.showScan()
 
 
     def skullStrip(self):
@@ -88,14 +47,6 @@ class preprocess:
         skull_img = self.img - br_img
         return br_img
 
-    def biasFieldCorrection(self):
-        img = sitk.ReadImage(self.path, imageIO="NiftiImageIO")
-        n4 = sitk.N4BiasFieldCorrection(img)
-        n4.inputs.dimension = 3
-        n4.inputs.shrink_factor = 3
-        n4.inputs.n_iterations = [20, 10, 10, 5]
-        res = n4.run()
-        sitk.WriteImage(res, '/home/arunav/Assets/outputs/bf_out.nii')
 
     def intensityNormalisation(self):
         img = sitk.ReadImage(self.path)
@@ -103,7 +54,54 @@ class preprocess:
         rescaleFilter.SetOutputMaximum(255)
         rescaleFilter.SetOutputMinimum(0)
         image = rescaleFilter.Execute(img)
-        sitk.WriteImage(image, os.path.join(self.savePath, 'normalised.nii'))
+        op = os.path.join(self.savePath, 'normalised.nii')
+        sitk.WriteImage(image, op)
+        return loadData(op)
+
+
+    def tissueSegment(self):
+        paths = saveAsPNG(self.savePath, self.img, flag = 1)
+
+        print(self.img.shape)
+
+        for img_path in paths:
+            image = cv2.imread(img_path)
+            # b = image[:, :, np.newaxis]
+            print(image.shape)
+
+            # b,g,r = cv2.split(image)
+            # b = cv2.equalizeHist(b)
+            # g = cv2.equalizeHist(g)
+            # r = cv2.equalizeHist(r)
+            # equ = cv2.merge((b,g,r))
+            # equ = cv2.cvtColor(equ,cv2.COLOR_BGR2RGB)
+
+            # clahe = cv2.createCLAHE(clipLimit=6, tileGridSize=(16,16))
+            # b,g,r = cv2.split(equ)
+            # b = clahe.apply(b)
+            # g = clahe.apply(g)
+            # r = clahe.apply(r)
+            # bgr = cv2.merge((b,g,r))
+            # cl = cv2.cvtColor(bgr,cv2.COLOR_BGR2RGB, 0.5)
+            # gray = cv2.cvtColor(cl, cv2.COLOR_BGR2GRAY, 0.5) 
+            # (T, thresh) = cv2.threshold(gray, 180, 220, cv2.THRESH_BINARY)
+
+
+        # return gray
+
+
+
+    def biasFieldCorrection(self):
+        img = sitk.ReadImage(self.path, imageIO="NiftiImageIO")
+        n4 = sitk.N4BiasFieldCorrection(img)
+        n4.inputs.dimension = 3
+        n4.inputs.shrink_factor = 3
+        n4.inputs.n_iterations = [20, 10, 10, 5]
+        res = n4.run()
+        plt.imshow(res)
+        plt.show()
+        # sitk.WriteImage(res, )
+
 
         # saveAsPNG(image, self.savePath)
 
@@ -112,53 +110,67 @@ class preprocess:
         coords = np.array(np.nonzero(~mask))
         top_left = np.min(coords, axis=1)
         bottom_right = np.max(coords, axis=1)
-        cropped = self.img[top_left[0]:bottom_right[0],
-                           top_left[1]:bottom_right[1], :]
+        cropped = self.img[top_left[0]:bottom_right[0], :, top_left[1]:bottom_right[1]]
 
         return cropped
 
     def addPadding(self, height=256, width=256):
-        h, w, _ = self.img.shape
-        final = np.zeros((height, width, self.img.shape[2]))
+        h, _, w = self.img.shape
+        final = np.zeros((height, self.img.shape[1], width))
         pad_left = int((width - w) // 2)
         pad_top = int((height - h) // 2)
-        final[pad_top:pad_top + h, pad_left:pad_left + w, :] = self.img
+        final[pad_top:pad_top + h, :, pad_left:pad_left + w] = self.img
 
         return final
 
-    def showScan(self, sl, verbose=False):
-        shape = self.img.shape
-        if sl >= 0:
-            if len(shape) > 3:
-                img = self.img[:, :, sl, 0]
-                plt.imshow(img, cmap='gray')
-                plt.show()
-                if verbose:
-                    print("Shape: {}".format(img.shape))
-            else:
-                img = self.img[:, sl, :]
-                plt.imshow(img, cmap='gray')
-                plt.show()
-                if verbose:
-                    print("Shape: {}".format(img.shape))
-        else:
-            for s2 in range(100, shape[2]):
-                if len(shape) > 3:
-                    img = self.img[:, :, s2, 0]
-                    plt.imshow(img, cmap='gray')
-                    plt.show()
-                    if verbose:
-                        print("Shape: {}".format(img.shape))
-                    # for s3 in range(shape[3]):
-                    #     img = data[:, :, s2, s2]
-                    #     plt.imshow(img)
-                    #     plt.show()
-                else:
-                    img = self.img[:, :, s2]
-                    plt.imshow(img, cmap='gray')
-                    plt.show()
-                    if verbose:
-                        print("Shape: {}".format(img.shape))
+
+    def edgeDetect(self):
+        pass
+
+
+    def showScan(self, verbose=False):
+        # shape = self.img.shape
+        # for i in range(0, shape[1], 4):
+        #     img = self.img[:, i, :]
+        #     # print(img.shape)
+        #     plt.imshow(img, cmap = 'gray')
+        #     plt.show()
+        img = self.img[:, 50, :]
+        # print(img.shape)
+        plt.imshow(img, cmap = 'gray')
+        plt.show()
+
+        # if sl >= 0:
+        #     if len(shape) > 3:
+        #         img = self.img[:, :, sl, 0]
+        #         plt.imshow(img, cmap='gray')
+        #         plt.show()
+        #         if verbose:
+        #             print("Shape: {}".format(img.shape))
+        #     else:
+        #         img = self.img[:, sl, :]
+        #         plt.imshow(img, cmap='gray')
+        #         plt.show()
+        #         if verbose:
+        #             print("Shape: {}".format(img.shape))
+        # else:
+        #     for s2 in range(100, shape[2]):
+        #         if len(shape) > 3:
+        #             img = self.img[:, :, s2, 0]
+        #             plt.imshow(img, cmap='gray')
+        #             plt.show()
+        #             if verbose:
+        #                 print("Shape: {}".format(img.shape))
+        #             # for s3 in range(shape[3]):
+        #             #     img = data[:, :, s2, s2]
+        #             #     plt.imshow(img)
+        #             #     plt.show()
+        #         else:
+        #             img = self.img[:, :, s2]
+        #             plt.imshow(img, cmap='gray')
+        #             plt.show()
+        #             if verbose:
+        #                 print("Shape: {}".format(img.shape))
 
     # TODO
 

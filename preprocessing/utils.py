@@ -32,6 +32,8 @@ def getFilePaths(path, flag = 1, verbose=False):
             d = os.path.join(path, sub)
             if os.path.isdir(d) and not d.endswith('Outputs'):
                 anat, func = os.listdir(d)
+                if (anat.endswith('func')):
+                    anat, func = func, anat
                 if flag == 2:
                     func = os.path.join(d, func)
                     for file in os.listdir(func):
