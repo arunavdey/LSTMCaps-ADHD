@@ -1,17 +1,24 @@
 import json
 import os
-from preprocessing.utils import getFilePaths, skullStrip, tiltCorrection, loadData, cropImage, showScan, addPadding, biasFieldCorrection, intensityNormalisation
-import SimpleITK as sitk
+from preprocess import preprocess
+from utils import getFilePaths, loadData, saveAsPNG, deleteDir
 
 with open('../filepath.json', 'r') as f:
     data = f.read()
     paths = json.loads(data)
 
-filepaths = getFilePaths(paths['data'], 'PaloAlto', functional=False)
+filepaths = getFilePaths(paths['data'], 'PaloAlto', functional=False) # all .nii files inside directory
+for f in filepaths:
+    if f.endswith("_anonymized.nii.gz"):
 
-img = loadData(filepaths[0], verbose=True)
+        fsplit = f.split("/")
+        subj = fsplit[-3]
+        opdir = os.path.join(paths['outputs'], subj) 
+        if os.path.exists(opdir):
+            os.remove(opdir)
+        os.mkdir(opdir)
 
-# intensityNormalisation(filepaths[0])
+        # img = loadData(f, verbose=True) # loading first subject's sMRI
 
-load = loadData('/home/arunav/Assets/outputs/in_out.nii')
-showScan(load)
+        # preproc = preprocess(f, imtype='structural', savePath=os.path.join(paths['outputs'], subj))
+        # preproc.run()
