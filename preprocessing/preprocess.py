@@ -9,30 +9,52 @@ import cv2
 import SimpleITK as sitk
 import tqdm
 import math
+import shutil
 
 from utils import loadData, saveAsPNG, deleteDir
 
-tf.disable_v2_behavior()
+tf.compat.v1.disable_v2_behavior()
 
 class preprocess:
-    def __init__(self, path, imtype='structural', savePath=None):
+    def __init__(self, path, flag=1, savePath=None):
         self.path = path # path to .nii; 3D for sMRI and 4D for fMRI
         self.img = loadData(self.path, verbose=True) # 4D or 3D numpy array
-        self.type = imtype
-        self.savePath = savePath
+        self.flag = flag
+
+        splitpath = path.split('/')
+        subj = splitpath[-3]
+        opdir = os.path.join(savePath, subj)
+        if os.path.exists(opdir):
+            shutil.rmtree(opdir)
+        os.mkdir(opdir)
+
+        self.savePath = opdir
 
 
     def run(self):
+        # print("Running Intensity Normalisation\n")
         # self.intensityNormalisation()
+        print("Running Skull Stripping\n")
         self.img = self.skullStrip()
+        print("Running Cropping\n")
         self.img = self.cropImage()
+        print("Running Add Padding\n")
         self.img = self.addPadding()
+        print(self.img.shape)
 
-        img_paths = saveAsPNG(self.savePath, self.img, mri='structural')
-        for ip in img_paths:
-            ts = self.tissueSegment(ip)
-            plt.imshow(ts)
-            plt.show()
+        img_paths = saveAsPNG(self.savePath, self.img, flag = 1, tag = 'ss_c_pad')
+
+        # for ip in img_paths:
+        #     print(ip)
+            # ts = self.tissueSegment(ip) # 2D image
+            # for t in range(ts.shape[1]):
+            #     saveAsPNG(self.savePath, ts[:, t, :], flag = 1)
+            
+
+        # deleteDir(self.savePath)
+
+    def edgeDetect(self):
+        pass
 
 
     def tissueSegment(self, img_path):
@@ -81,7 +103,9 @@ class preprocess:
         rescaleFilter.SetOutputMaximum(255)
         rescaleFilter.SetOutputMinimum(0)
         image = rescaleFilter.Execute(img)
-        saveAsPNG(image, self.savePath)
+        sitk.WriteImage(image, os.path.join(self.savePath, 'normalised.nii'))
+
+        # saveAsPNG(image, self.savePath)
 
     def cropImage(self):
         mask = self.img == 0
