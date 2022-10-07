@@ -1,15 +1,9 @@
 import os
 import nibabel as nib
-import matplotlib
 import numpy as np
 
 
 def loadData(path, verbose=False):
-    """
-    Loads the .nii file and returns it as an object
-    path: Path to the .nii file
-    verbose: Optional, False by default
-    """
     if os.path.exists(path):
         print("Loaded {}".format(path))
         img_load = nib.load(path).get_fdata()
@@ -20,12 +14,6 @@ def loadData(path, verbose=False):
 
 
 def getFilePaths(path, flag = 1, verbose=False):
-    """
-    Returns all the filepaths under the directory
-    path: Path to parent directory
-    flag: Optional, 1 for sMRI and 2 for fMRI, 1 by default
-    verbose: Optional, False by default
-    """
     filePaths = list()
     if os.path.exists(path):
         for sub in os.listdir(path):
@@ -51,12 +39,6 @@ def getFilePaths(path, flag = 1, verbose=False):
 
 
 def saveAsPNG(path, data, flag = 1, tag = ''):
-    """
-    Saves the slices of a NumPy array as a PNG 
-    path: Directory to save the generated PNG at
-    data: Numpy Array object
-    flag: Optional, 1 for sMRI and 2 for fMRI, 1 by default
-    """
     sh = data.shape
     paths = list()
     if os.path.exists(path):
@@ -76,10 +58,6 @@ def saveAsPNG(path, data, flag = 1, tag = ''):
 
 
 def deleteDir(path):
-    """
-    Deletes the specified directory
-    path: Path of the directory to delete
-    """
     if os.path.exists(path):
         for f in os.listdir(path):
             fpath = os.path.join(path, f)
