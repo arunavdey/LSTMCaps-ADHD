@@ -8,7 +8,7 @@ subs = [04856];
 
 % subs = [02248 07210 13304 16112 17516 23740 24528 40095 40451 47141 48778 56945 57368 66945 68195 71633 74429 76621 79611 80089 82071 85152]; % Oxford
 
-rootdir = '/home/arunav/Assets/Capstone/PaloAlto';
+rootdir = '/home/arunav/Assets/ADHD-200/PaloAlto';
 % rootdir = '/home/arunav/Assets/Capstone/Oxford';
 
 spmdir = '/home/arunav/matlab/spm12';
@@ -56,7 +56,7 @@ for sub = subs
 
     % Coregistration
     matlabbatch{4}.spm.spatial.coreg.estwrite.ref(1) = cfg_dep('Realign: Estimate & Reslice: Mean Image', substruct('.', 'val', '{}', {2}, '.', 'val', '{}', {1}, '.', 'val', '{}', {1}, '.', 'val', '{}', {1}), substruct('.', 'rmean'));
-    matlabbatch{4}.spm.spatial.coreg.estwrite.source = {[rootdir '/sub' sub '/anat/mprage_skullstripped.nii,1']};
+    matlabbatch{4}.spm.spatial.coreg.estwrite.source = {[rootdir '/sub' sub '/anat/mprage_anonymized.nii,1']};
     matlabbatch{4}.spm.spatial.coreg.estwrite.other = {''};
     matlabbatch{4}.spm.spatial.coreg.estwrite.eoptions.cost_fun = 'nmi';
     matlabbatch{4}.spm.spatial.coreg.estwrite.eoptions.sep = [4 2];
