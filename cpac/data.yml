@@ -1,0 +1,14 @@
+dataFormat: Custom
+anatomicalTemplate: /home/arunav/Assets/FCP1000/{site}/{participant}/anat/mprage_anonymized.nii.gz
+functionalTemplate: /home/arunav/Assets/FCP1000/{site}/{participant}/func/rest.nii.gz
+outputSubjectListLocation: "/home/arunav/CSE/Projects/BayesCaps-ADHD/cpac/configs/"
+scanParametersCSV: None
+brain_mask_template: None
+fieldMapPhase: None
+fieldMapMagnitude: None
+# subjectList: None
+# exclusionSubjectList: None
+# siteList: None
+# exclusionSiteList: None
+# scanList: None
+# exclusionScanList: None
