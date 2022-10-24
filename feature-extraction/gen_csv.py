@@ -7,59 +7,78 @@ import numpy as np
 import os
 from densities import density
 
-def generate(subject, root_path, save_path = "./features/"):
-    # TODO
-    # add other features to generate code
-    falff_path = os.path.join(root_path, f"test_data/falff_{subject}_session_1_rest_1.nii")
-    reho_path = os.path.join(root_path, f"test_data/reho_{subject}_session_1_rest_1.nii")
-    gm_path = os.path.join(root_path, f"test_data/segmented_{subject}_anat/c1anat_X_{subject}_classify_stereolin.nii")
-    wm_path = os.path.join(root_path, f"test_data/segmented_{subject}_anat/c2anat_X_{subject}_classify_stereolin.nii")
-    csf_path = os.path.join(root_path, f"test_data/segmented_{subject}_anat/c3anat_X_{subject}_classify_stereolin.nii")
 
+def generate(subject, root_path, save_path="./features/"):
+    # TODO
+    # ROIs and Densities for sMRI
+    falff_path = os.path.join(
+        root_path, f"test_data/falff_{subject}_session_1_rest_1.nii")
+    reho_path = os.path.join(
+        root_path, f"test_data/reho_{subject}_session_1_rest_1.nii")
+    pcc_path = os.path.join(
+        root_path, f"test_data/sbc_{subject}/pcc_seed_correlation_z.nii")
+    mpfc_path = os.path.join(
+        root_path, f"test_data/sbc_{subject}/mpfc_seed_correlation_z.nii")
+    lTPJ_path = os.path.join(
+        root_path, f"test_data/sbc_{subject}/lTPJ_seed_correlation_z.nii")
+    rTPJ_path = os.path.join(
+        root_path, f"test_data/sbc_{subject}/rTPJ_seed_correlation_z.nii")
+    gm_path = os.path.join(
+        root_path, f"test_data/segmented_{subject}_anat/c1anat_X_{subject}_classify_stereolin.nii")
+    wm_path = os.path.join(
+        root_path, f"test_data/segmented_{subject}_anat/c2anat_X_{subject}_classify_stereolin.nii")
+    csf_path = os.path.join(
+        root_path, f"test_data/segmented_{subject}_anat/c3anat_X_{subject}_classify_stereolin.nii")
 
     falff = nib.load(falff_path).get_fdata()
     reho = nib.load(reho_path).get_fdata()
     gm = nib.load(gm_path).get_fdata()
     wm = nib.load(wm_path).get_fdata()
     csf = nib.load(csf_path).get_fdata()
+    pcc = nib.load(pcc_path).get_fdata()
+    mpfc = nib.load(mpfc_path).get_fdata()
+    lTPJ = nib.load(lTPJ_path).get_fdata()
+    rTPJ = nib.load(rTPJ_path).get_fdata()
 
     falff_shape = falff.shape
     reho_shape = reho.shape
     gm_shape = gm.shape
     wm_shape = wm.shape
     csf_shape = csf.shape
+    pcc_shape = pcc.shape
+    mpfc_shape = mpfc.shape
+    lTPJ_shape = lTPJ.shape
+    rTPJ_shape = rTPJ.shape
 
-    # features = ['x', 'y', 'z', 'gm', 'wm', 'csf','falff', 'reho', 'sbc']
+    features = ['x', 'y', 'z', 'gm', 'wm', 'csf','falff', 'reho', 'pcc', 'mpfc', 'lTPJ', 'rTPJ']
 
-    df = pd.DataFrame(columns = ('x', 'y', 'z', 'gm', 'wm', 'csf', 'falff', 'reho'))
-    # TODO
-    # load in gm wm csf stuff and append corresponding vals to dataframe
+    df = pd.DataFrame(columns = features)
 
     count = 0
 
-    # for x in range(falff_shape[0]):
-    #     for y in range(falff_shape[1]):
-    #         for z in range(falff_shape[2]):
-    for x in range(1):
-        for y in range(1):
-            for z in range(1):
+    for x in range(falff_shape[0]):
+        for y in range(falff_shape[1]):
+            for z in range(falff_shape[2]):
+    # for x in range(25, 26):
+    #     for y in range(25, 26):
+    #         for z in range(25, 26):
                 temp_df = list()
                 temp_df.append(x)
                 temp_df.append(y)
                 temp_df.append(z)
 
                 if gm[x][y][z]:
-                    temp_df.append(1)
+                    temp_df.append(1) # gm
                     temp_df.append(0)
                     temp_df.append(0)
                 elif wm[x][y][z]:
                     temp_df.append(0)
-                    temp_df.append(1)
+                    temp_df.append(1) # wm
                     temp_df.append(0)
                 elif csf[x][y][z]:
                     temp_df.append(0)
                     temp_df.append(0)
-                    temp_df.append(1)
+                    temp_df.append(1) # csf
                 else:
                     temp_df.append(0)
                     temp_df.append(0)
@@ -67,6 +86,10 @@ def generate(subject, root_path, save_path = "./features/"):
 
                 temp_df.append(falff[x][y][z])
                 temp_df.append(reho[x][y][z])
+                temp_df.append(pcc[x][y][z][0])
+                temp_df.append(mpfc[x][y][z][0])
+                temp_df.append(lTPJ[x][y][z][0])
+                temp_df.append(rTPJ[x][y][z][0])
                 print(temp_df)
                 df.loc[count] = temp_df
                 count += 1
