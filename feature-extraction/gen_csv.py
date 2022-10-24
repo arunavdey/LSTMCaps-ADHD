@@ -11,25 +11,28 @@ from densities import density
 def generate(subject, root_path, save_path="./features/"):
     # TODO
     # ROIs and Densities for sMRI
+    fmri_path = os.path.join(
+        root_path, f"train/{subject}/func/sfnwmrda{subject}_session_1_rest_1.nii")
     falff_path = os.path.join(
-        root_path, f"test_data/falff_{subject}_session_1_rest_1.nii")
+        root_path, f"train/{subject}/falff_{subject}_session_1_rest_1.nii")
     reho_path = os.path.join(
-        root_path, f"test_data/reho_{subject}_session_1_rest_1.nii")
+        root_path, f"train/{subject}/reho_{subject}_session_1_rest_1.nii")
     pcc_path = os.path.join(
-        root_path, f"test_data/sbc_{subject}/pcc_seed_correlation_z.nii")
+        root_path, f"train/{subject}/sbc/pcc_seed_correlation_z.nii")
     mpfc_path = os.path.join(
-        root_path, f"test_data/sbc_{subject}/mpfc_seed_correlation_z.nii")
+        root_path, f"train/{subject}/sbc/mpfc_seed_correlation_z.nii")
     lTPJ_path = os.path.join(
-        root_path, f"test_data/sbc_{subject}/lTPJ_seed_correlation_z.nii")
+        root_path, f"train/{subject}/sbc/lTPJ_seed_correlation_z.nii")
     rTPJ_path = os.path.join(
-        root_path, f"test_data/sbc_{subject}/rTPJ_seed_correlation_z.nii")
+        root_path, f"train/{subject}/sbc/rTPJ_seed_correlation_z.nii")
     gm_path = os.path.join(
-        root_path, f"test_data/segmented_{subject}_anat/c1anat_X_{subject}_classify_stereolin.nii")
+        root_path, f"train/{subject}/segmented/c1anat_X_{subject}_classify_stereolin.nii")
     wm_path = os.path.join(
-        root_path, f"test_data/segmented_{subject}_anat/c2anat_X_{subject}_classify_stereolin.nii")
+        root_path, f"train/{subject}/segmented/c2anat_X_{subject}_classify_stereolin.nii")
     csf_path = os.path.join(
-        root_path, f"test_data/segmented_{subject}_anat/c3anat_X_{subject}_classify_stereolin.nii")
+        root_path, f"train/{subject}/segmented/c3anat_X_{subject}_classify_stereolin.nii")
 
+    fmri = nib.load(fmri_path).get_fdata()
     falff = nib.load(falff_path).get_fdata()
     reho = nib.load(reho_path).get_fdata()
     gm = nib.load(gm_path).get_fdata()
@@ -40,15 +43,7 @@ def generate(subject, root_path, save_path="./features/"):
     lTPJ = nib.load(lTPJ_path).get_fdata()
     rTPJ = nib.load(rTPJ_path).get_fdata()
 
-    falff_shape = falff.shape
-    reho_shape = reho.shape
-    gm_shape = gm.shape
-    wm_shape = wm.shape
-    csf_shape = csf.shape
-    pcc_shape = pcc.shape
-    mpfc_shape = mpfc.shape
-    lTPJ_shape = lTPJ.shape
-    rTPJ_shape = rTPJ.shape
+    fmri_shape = fmri.shape
 
     features = ['x', 'y', 'z', 'gm', 'wm', 'csf','falff', 'reho', 'pcc', 'mpfc', 'lTPJ', 'rTPJ']
 
@@ -56,9 +51,9 @@ def generate(subject, root_path, save_path="./features/"):
 
     count = 0
 
-    for x in range(falff_shape[0]):
-        for y in range(falff_shape[1]):
-            for z in range(falff_shape[2]):
+    for x in range(fmri_shape[0]):
+        for y in range(fmri_shape[1]):
+            for z in range(fmri_shape[2]):
     # for x in range(25, 26):
     #     for y in range(25, 26):
     #         for z in range(25, 26):
