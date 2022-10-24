@@ -1,12 +1,9 @@
-"""
-Generates a CSV file for each subject with the features 
-"""
 import nibabel as nib
 import pandas as pd
 import numpy as np
 import os
 import time
-from densities import density
+# from densities import density
 
 
 def generate(subject, root_path, save_path="./features/"):
@@ -26,19 +23,10 @@ def generate(subject, root_path, save_path="./features/"):
         root_path, f"train/{subject}/sbc/lTPJ_seed_correlation_z.nii")
     rTPJ_path = os.path.join(
         root_path, f"train/{subject}/sbc/rTPJ_seed_correlation_z.nii")
-    gm_path = os.path.join(
-        root_path, f"train/{subject}/segmented/c1anat_X_{subject}_classify_stereolin.nii")
-    wm_path = os.path.join(
-        root_path, f"train/{subject}/segmented/c2anat_X_{subject}_classify_stereolin.nii")
-    csf_path = os.path.join(
-        root_path, f"train/{subject}/segmented/c3anat_X_{subject}_classify_stereolin.nii")
 
     fmri = nib.load(fmri_path).get_fdata()
     falff = nib.load(falff_path).get_fdata()
     reho = nib.load(reho_path).get_fdata()
-    gm = nib.load(gm_path).get_fdata()
-    wm = nib.load(wm_path).get_fdata()
-    csf = nib.load(csf_path).get_fdata()
     pcc = nib.load(pcc_path).get_fdata()
     mpfc = nib.load(mpfc_path).get_fdata()
     lTPJ = nib.load(lTPJ_path).get_fdata()
@@ -46,15 +34,19 @@ def generate(subject, root_path, save_path="./features/"):
 
     fmri_shape = fmri.shape
 
-    features = ['x', 'y', 'z', 'gm', 'wm', 'csf','falff', 'reho', 'pcc', 'mpfc', 'lTPJ', 'rTPJ']
+    features = ['x', 'y', 'z', 'falff', 'reho', 'pcc', 'mpfc', 'lTPJ', 'rTPJ']
 
     df = pd.DataFrame(columns = features)
 
     count = 0
 
+    tot = fmri_shape[0] * fmri_shape[1] * fmri_shape[2]
+
     for x in range(fmri_shape[0]):
         for y in range(fmri_shape[1]):
             for z in range(fmri_shape[2]):
+
+
     # for x in range(25, 26):
     #     for y in range(25, 26):
     #         for z in range(25, 26):
@@ -62,38 +54,20 @@ def generate(subject, root_path, save_path="./features/"):
                 temp_df.append(x)
                 temp_df.append(y)
                 temp_df.append(z)
-
-                if gm[x][y][z]:
-                    temp_df.append(1) # gm
-                    temp_df.append(0)
-                    temp_df.append(0)
-                elif wm[x][y][z]:
-                    temp_df.append(0)
-                    temp_df.append(1) # wm
-                    temp_df.append(0)
-                elif csf[x][y][z]:
-                    temp_df.append(0)
-                    temp_df.append(0)
-                    temp_df.append(1) # csf
-                else:
-                    temp_df.append(0)
-                    temp_df.append(0)
-                    temp_df.append(0)
-
                 temp_df.append(falff[x][y][z])
                 temp_df.append(reho[x][y][z])
                 temp_df.append(pcc[x][y][z][0])
                 temp_df.append(mpfc[x][y][z][0])
                 temp_df.append(lTPJ[x][y][z][0])
                 temp_df.append(rTPJ[x][y][z][0])
-                print(temp_df)
                 df.loc[count] = temp_df
                 count += 1
+                print(f"\nProgress: {(count*100)/tot}")
 
     save = os.path.join(save_path, f"{subject}_features.csv")
     df.to_csv(save)
 
-    print(f"Generated features csv for subject {subject} at {save}")
+    print(f"generated features csv for subject {subject} at {save}")
 
 
 if __name__ == "__main__":

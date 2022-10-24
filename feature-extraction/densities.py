@@ -30,7 +30,7 @@ if __name__ == "__main__":
     print("Densities")
     home = "/home/arunav"
     sub = "1018959"
-    path = os.path.join(home, "Assets", "test_data", f"segmented_{sub}_anat")
+    path = os.path.join(home, "Assets", "ADHD200", "train", f"{sub}", "segmented")
 
     gm, wm, csf, _ = density(path, sub)
     print(f"GM Density: {gm}")
