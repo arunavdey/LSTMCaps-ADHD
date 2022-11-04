@@ -1,4 +1,3 @@
-deepbrain==0.1
 matplotlib==3.5.3
 nibabel==4.0.1
 numpy==1.18.5
