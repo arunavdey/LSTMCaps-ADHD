@@ -3,73 +3,62 @@ import numpy as np
 import pandas as pd
 import os
 
+from densities import density
+
+
 dir_home = os.path.expanduser("~")
 dir_athena = os.path.join(dir_home, "Assets", "ADHD200", "kki_athena")
 # dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "kki_niak")
 
 
+# def smri(subject, dx, idx, save_path="./features/"):
+#     # wm_path
+#     # gm_path
+#     # csf_path
+#     # empty_path
+
+#     features = ['x', 'y', 'z', 'gm', 'wm', 'csf', 'gm_density', 'wm_density', 'dx', 'idx']
+
 def fmri(subject, dx, idx, save_path="./features/"):
-    # fractional amplitude of low frequency fluctuations
     falff_path = os.path.join(dir_athena, "KKI_falff_filtfix", "KKI",
                               f"{subject}", f"falff_{subject}_session_1_rest_1.nii.gz")
     falff = nib.load(falff_path).get_fdata()  # 49, 58, 47
 
-    # regional homogenity
     reho_path = os.path.join(dir_athena, "KKI_reho_filtfix", "KKI",
                              f"{subject}", f"reho_{subject}_session_1_rest_1.nii.gz")
     reho = nib.load(reho_path).get_fdata()  # 49, 58, 47
 
-    # functional connectivity
     fc_path = os.path.join(dir_athena, "KKI_preproc", "KKI",
                            f"{subject}", f"fc_snwmrda{subject}_session_1_rest_1.nii.gz")
     fc = nib.load(fc_path).get_fdata()  # 49, 58, 47, 1, 10
 
-    # mean of time series
-    mean_path = os.path.join(dir_athena, "KKI_preproc", "KKI",
-                             f"{subject}", f"wmean_mrda{subject}_session_1_rest_1.nii.gz")
-    mean = nib.load(mean_path).get_fdata()  # 49, 58, 47
-
-    features = ['x', 'y', 'z', 'falff', 'reho', 'fc', 'dx', 'idx']
+    features = ['x', 'y', 'z', 'fc1', 'fc2', 'fc3', 'fc4', 'fc5', 'fc6',
+                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'dx', 'idx']
 
     df = pd.DataFrame(columns=features)
 
-    tot = 49 * 48 * 47
-
-    count = 0
-
-    for x in range(25, 20):
-        for y in range(25, 30):
-            for z in range(25, 30):
-                temp_df = [x, y, z]
-                temp_df.append(falff[x][y][z])
-                temp_df.append(reho[x][y][z])
-                temp_df.append(fc[x][y][z][0])
-                temp_df.append(dx)
-                temp_df.append(idx)
-                df.loc[count] = temp_df
-                count += 1
+    for x in range(49):
+        for y in range(58):
+            for z in range(47):
+                row = [x, y, z]
+                for i in range(10):
+                    row.append(fc[x][y][z][0][i])
+                row.append(falff[x][y][z])
+                row.append(reho[x][y][z])
+                row.append(dx)
+                row.append(idx)
+                df.loc[len(df.index)] = row
 
     save = os.path.join(save_path, f"{subject}_features_func.csv")
     df.to_csv(save)
 
-    print(f"Generated fMRI features for {subject} at {save}")
-
-
-def smri(subject):
-    pass
+    print(f"Generated functional features for {subject} at {save}")
 
 
 if __name__ == "__main__":
     pheno_path = os.path.join(
         dir_athena, "KKI_preproc", "KKI", "KKI_phenotypic.csv")
     pheno = pd.read_csv(pheno_path)
-    # columns = pheno.columns
-
-    """
-    'ScanDir ID', 'Site', 'Gender', 'Age', 'Handedness', 'DX', 'Secondary Dx ', 'ADHD Measure', 'ADHD Index', 'Inattentive', 
-    'Hyper/Impulsive', 'IQ Measure', 'Verbal IQ', 'Performance IQ', 'Full2 IQ', 'Full4 IQ', 'Med Status', 'QC_Rest_1', 
-    'QC_Rest_2', 'QC_Rest_3', 'QC_Rest_4', 'QC_Anatomical_1', 'QC_Anatomical_2'
-    """
 
     subAll = list()
     subADHD = list()
@@ -87,5 +76,5 @@ if __name__ == "__main__":
         else:
             subADHD.append((subID, dx, index))
 
-    for sub in subADHD:
-        fmri(sub[0], sub[1], sub[2])
+    for subID, dx, idx in subAll:
+        fmri(subID, dx, idx)
