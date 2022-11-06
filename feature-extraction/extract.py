@@ -2,7 +2,6 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import os
-
 from densities import density
 
 
@@ -11,15 +10,29 @@ dir_athena = os.path.join(dir_home, "Assets", "ADHD200", "kki_athena")
 # dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "kki_niak")
 
 
-# def smri(subject, dx, idx, save_path="./features/"):
-#     # wm_path
-#     # gm_path
-#     # csf_path
-#     # empty_path
+def smri(subject, dx, idx, save_path="./features/"):
+    # Use NIAK pipeline
+    # wm_path
+    # gm_path
+    # csf_path
+    # empty_path
 
-#     features = ['x', 'y', 'z', 'gm', 'wm', 'csf', 'gm_density', 'wm_density', 'dx', 'idx']
+    features = ['x', 'y', 'z', 'gm', 'wm', 'gm_density', 'wm_density', 'dx', 'idx']
 
-def fmri(subject, dx, idx, save_path="./features/"):
+    df = pd.DataFrame(columns = features)
+    
+    # for x in range(25, 30):
+    #     for y in range(25, 30):
+    #         for z in range(25, 30):
+    #             row = [x, y, z]
+    #             row.append(gm[x][y][z])
+    #             row.append(wm[x][y][z])
+    #             row.append(gm_density)
+    #             row.append(wm_density)
+    #             row.append(dx)
+    #             row.append(idx)
+
+def fmri(subject, dx, idx):
     falff_path = os.path.join(dir_athena, "KKI_falff_filtfix", "KKI",
                               f"{subject}", f"falff_{subject}_session_1_rest_1.nii.gz")
     falff = nib.load(falff_path).get_fdata()  # 49, 58, 47
@@ -37,9 +50,12 @@ def fmri(subject, dx, idx, save_path="./features/"):
 
     df = pd.DataFrame(columns=features)
 
-    for x in range(49):
-        for y in range(58):
-            for z in range(47):
+    for x in range(25, 30):
+        for y in range(25, 30):
+            for z in range(25, 30):
+    # for x in range(49):
+    #     for y in range(58):
+    #         for z in range(47):
                 row = [x, y, z]
                 for i in range(10):
                     row.append(fc[x][y][z][0][i])
@@ -49,10 +65,10 @@ def fmri(subject, dx, idx, save_path="./features/"):
                 row.append(idx)
                 df.loc[len(df.index)] = row
 
-    save = os.path.join(save_path, f"{subject}_features_func.csv")
-    df.to_csv(save)
+    print(f"Generated functional features for {subject}")
 
-    print(f"Generated functional features for {subject} at {save}")
+    return df
+
 
 
 if __name__ == "__main__":
@@ -76,5 +92,18 @@ if __name__ == "__main__":
         else:
             subADHD.append((subID, dx, index))
 
-    for subID, dx, idx in subAll:
-        fmri(subID, dx, idx)
+    controlFunc = pd.DataFrame()
+    controlAnat = pd.DataFrame()
+    adhdFunc = pd.DataFrame()
+    adhdAnat = pd.DataFrame()
+
+    for i in range(5):
+        subID, dx, idx = subADHD[i]
+        adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, idx)], axis = 0)
+
+    for i in range(5):
+        subID, dx, idx = subControl[i]
+        controlFunc = pd.concat([controlFunc, fmri(subID, dx, idx)], axis = 0)
+
+    adhdFunc.to_csv("adhd_func.csv", index = False)
+    controlFunc.to_csv("control_func.csv", index = False)
