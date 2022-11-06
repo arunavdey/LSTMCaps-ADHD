@@ -2,22 +2,23 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import os
-from densities import density
+from utils.densities import density
 
 
 dir_home = os.path.expanduser("~")
 dir_athena = os.path.join(dir_home, "Assets", "ADHD200", "kki_athena")
-# dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "kki_niak")
+dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "kki_niak")
 
 
 def smri(subject, dx, idx, save_path="./features/"):
     # Use NIAK pipeline
+    # wm_path = os.path.join(dir_niak, "anat_kki", f"X_{subject}")
     # wm_path
     # gm_path
     # csf_path
     # empty_path
 
-    features = ['x', 'y', 'z', 'gm', 'wm', 'gm_density', 'wm_density', 'dx', 'idx']
+    features = ['x', 'y', 'z', 'gm', 'wm', 'gm_density', 'wm_density', 'dx', 'idx'] # 9
 
     df = pd.DataFrame(columns = features)
     
@@ -46,7 +47,7 @@ def fmri(subject, dx, idx):
     fc = nib.load(fc_path).get_fdata()  # 49, 58, 47, 1, 10
 
     features = ['x', 'y', 'z', 'fc1', 'fc2', 'fc3', 'fc4', 'fc5', 'fc6',
-                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'dx', 'idx']
+                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'dx', 'idx'] # 17
 
     df = pd.DataFrame(columns=features)
 
@@ -76,21 +77,18 @@ if __name__ == "__main__":
         dir_athena, "KKI_preproc", "KKI", "KKI_phenotypic.csv")
     pheno = pd.read_csv(pheno_path)
 
-    subAll = list()
     subADHD = list()
     subControl = list()
 
     for ind in pheno.index:
         subID = pheno["ScanDir ID"][ind]
         dx = pheno["DX"][ind]
-        index = pheno["ADHD Index"][ind]
-
-        subAll.append((subID, dx, index))
+        idx = pheno["ADHD Index"][ind]
 
         if dx == 0:
-            subControl.append((subID, dx, index))
+            subControl.append((subID, dx, idx))
         else:
-            subADHD.append((subID, dx, index))
+            subADHD.append((subID, dx, idx))
 
     controlFunc = pd.DataFrame()
     controlAnat = pd.DataFrame()
@@ -105,5 +103,5 @@ if __name__ == "__main__":
         subID, dx, idx = subControl[i]
         controlFunc = pd.concat([controlFunc, fmri(subID, dx, idx)], axis = 0)
 
-    adhdFunc.to_csv("adhd_func.csv", index = False)
-    controlFunc.to_csv("control_func.csv", index = False)
+    adhdFunc.to_csv("features/adhd_func.csv", index = False)
+    controlFunc.to_csv("features/control_func.csv", index = False)
