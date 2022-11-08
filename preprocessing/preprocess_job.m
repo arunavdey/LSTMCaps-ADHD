@@ -3,20 +3,18 @@
 
 spm_jobman('initcfg');
 
-% subs = [04856 15213 20732 29935 38088 46856 54541 58313 61001 61241 66941 70752 84978 88286 91196 96705]; % Palo Alto
-subs = [04856];
+subs = [1018959 1019436 1043241 1266183 1535233 1541812 1577042 1594156 1623716 1638334 1652369 1686265];
 
-% subs = [02248 07210 13304 16112 17516 23740 24528 40095 40451 47141 48778 56945 57368 66945 68195 71633 74429 76621 79611 80089 82071 85152]; % Oxford
-
-rootdir = '/home/arunav/Assets/ADHD-200/PaloAlto';
+rootdir = '/home/arunav/Assets/ADHD200/kki_niak/anat_kki';
 % rootdir = '/home/arunav/Assets/Capstone/Oxford';
 
-spmdir = '/home/arunav/matlab/spm12';
+% spmdir = '/home/arunav/matlab/spm12';
+spmdir = '/mnt/c/Users/aruna/OneDrive/Documents/MATLAB/spm12';
 
 for sub = subs
     sub = num2str(sub, '%05d');
 
-    if exist([rootdir '/sub' sub '/func/rest.nii']) == 0
+    if exist([rootdir 'X_' sub '/func/rest.nii']) == 0
         gunzip([rootdir '/sub' sub '/func/rest.nii.gz']);
     else
     end

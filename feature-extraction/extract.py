@@ -2,6 +2,7 @@ import nibabel as nib
 import numpy as np
 import pandas as pd
 import os
+import time
 from utils.densities import density
 
 
@@ -11,27 +12,31 @@ dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "kki_niak")
 
 
 def smri(subject, dx, idx, save_path="./features/"):
-    # Use NIAK pipeline
-    # wm_path = os.path.join(dir_niak, "anat_kki", f"X_{subject}")
-    # wm_path
-    # gm_path
-    # csf_path
-    # empty_path
+    anat_path = os.path.join(
+        dir_niak, "anat_kki", f"X_{subject}", f"anat_X_{subject}_classify_stereolin.nii.gz")
+    anat = nib.load(anat_path).get_fdata()
 
-    features = ['x', 'y', 'z', 'gm', 'wm', 'gm_density', 'wm_density', 'dx', 'idx'] # 9
+    # features = ['x', 'y', 'z', 'class', 'gm_density', 'wm_density', 'dx', 'idx'] # 8
+    features = ['x', 'y', 'z', 'class', 'dx', 'idx']
 
-    df = pd.DataFrame(columns = features)
-    
-    # for x in range(25, 30):
-    #     for y in range(25, 30):
-    #         for z in range(25, 30):
-    #             row = [x, y, z]
-    #             row.append(gm[x][y][z])
-    #             row.append(wm[x][y][z])
-    #             row.append(gm_density)
-    #             row.append(wm_density)
-    #             row.append(dx)
-    #             row.append(idx)
+    df = pd.DataFrame(columns=features)
+
+    # for x in range(100, 105):
+    #     for y in range(100, 105):
+    #         for z in range(100, 105):
+    for x in range(anat.shape[0]):
+        for y in range(anat.shape[1]):
+            for z in range(anat.shape[2]):
+                row = [x, y, z]
+                row.append(anat[x][y][z])
+                row.append(dx)
+                row.append(idx)
+                df.loc[len(df.index)] = row
+
+    print(f"Generated functional features for {subject}")
+
+    return df
+
 
 def fmri(subject, dx, idx):
     falff_path = os.path.join(dir_athena, "KKI_falff_filtfix", "KKI",
@@ -47,16 +52,16 @@ def fmri(subject, dx, idx):
     fc = nib.load(fc_path).get_fdata()  # 49, 58, 47, 1, 10
 
     features = ['x', 'y', 'z', 'fc1', 'fc2', 'fc3', 'fc4', 'fc5', 'fc6',
-                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'dx', 'idx'] # 17
+                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'dx', 'idx']  # 17
 
     df = pd.DataFrame(columns=features)
 
-    for x in range(25, 30):
-        for y in range(25, 30):
-            for z in range(25, 30):
-    # for x in range(49):
-    #     for y in range(58):
-    #         for z in range(47):
+    # for x in range(25, 30):
+    #     for y in range(25, 30):
+    #         for z in range(25, 30):
+    for x in range(falff.shape[0]):
+        for y in range(falff.shape[1]):
+            for z in range(falff.shape[2]):
                 row = [x, y, z]
                 for i in range(10):
                     row.append(fc[x][y][z][0][i])
@@ -69,7 +74,6 @@ def fmri(subject, dx, idx):
     print(f"Generated functional features for {subject}")
 
     return df
-
 
 
 if __name__ == "__main__":
@@ -95,13 +99,25 @@ if __name__ == "__main__":
     adhdFunc = pd.DataFrame()
     adhdAnat = pd.DataFrame()
 
+    print("Generating CSVs for Control set")
     for i in range(5):
-        subID, dx, idx = subADHD[i]
-        adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, idx)], axis = 0)
-
-    for i in range(5):
+        start = time.time()
         subID, dx, idx = subControl[i]
-        controlFunc = pd.concat([controlFunc, fmri(subID, dx, idx)], axis = 0)
+        controlFunc = pd.concat([controlFunc, fmri(subID, dx, idx)], axis=0)
+        controlAnat = pd.concat([controlAnat, smri(subID, dx, idx)], axis=0)
+        end = time.time()
+        print(f"Took {end - start}s")
 
-    adhdFunc.to_csv("features/adhd_func.csv", index = False)
-    controlFunc.to_csv("features/control_func.csv", index = False)
+    print("Generating CSVs for ADHD set")
+    for i in range(5):
+        start = time.time()
+        subID, dx, idx = subADHD[i]
+        adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, idx)], axis=0)
+        adhdAnat = pd.concat([adhdAnat, smri(subID, dx, idx)], axis=0)
+        end = time.time()
+        print(f"Took {end - start}s")
+
+    controlFunc.to_csv("features/control_func.csv", index=False)
+    controlAnat.to_csv("features/control_anat.csv", index=False)
+    adhdFunc.to_csv("features/adhd_func.csv", index=False)
+    adhdAnat.to_csv("features/adhd_anat.csv", index=False)
