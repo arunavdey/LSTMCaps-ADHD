@@ -6,9 +6,10 @@ import time
 from utils.densities import density
 
 
-dir_home = os.path.expanduser("~")
-dir_athena = os.path.join(dir_home, "Assets", "ADHD200", "kki_athena")
-dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "kki_niak")
+# dir_home = os.path.expanduser("~")
+dir_home = os.path.join("/mnt", "d")
+dir_athena = os.path.join(dir_home, "Assets", "ADHD200", "KKI_athena")
+dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "KKI_niak")
 
 
 def smri(subject, dx, idx, save_path="./features/"):
@@ -21,12 +22,12 @@ def smri(subject, dx, idx, save_path="./features/"):
 
     df = pd.DataFrame(columns=features)
 
-    # for x in range(100, 105):
-    #     for y in range(100, 105):
-    #         for z in range(100, 105):
-    for x in range(anat.shape[0]):
-        for y in range(anat.shape[1]):
-            for z in range(anat.shape[2]):
+    for x in range(100, 105):
+        for y in range(100, 105):
+            for z in range(100, 105):
+    # for x in range(anat.shape[0]):
+    #     for y in range(anat.shape[1]):
+    #         for z in range(anat.shape[2]):
                 row = [x, y, z]
                 row.append(anat[x][y][z])
                 row.append(dx)
@@ -35,19 +36,21 @@ def smri(subject, dx, idx, save_path="./features/"):
 
     print(f"Generated functional features for {subject}")
 
-    return df
+    save = os.path.join(save_path, f"anat_features_{subject}.csv")
+
+    df.to_csv(save, index = False)
 
 
-def fmri(subject, dx, idx):
-    falff_path = os.path.join(dir_athena, "KKI_falff_filtfix", "KKI",
+def fmri(subject, dx, idx, save_path="./features/"):
+    falff_path = os.path.join(dir_athena, "KKI_falff_filtfix",
                               f"{subject}", f"falff_{subject}_session_1_rest_1.nii.gz")
     falff = nib.load(falff_path).get_fdata()  # 49, 58, 47
 
-    reho_path = os.path.join(dir_athena, "KKI_reho_filtfix", "KKI",
+    reho_path = os.path.join(dir_athena, "KKI_reho_filtfix",
                              f"{subject}", f"reho_{subject}_session_1_rest_1.nii.gz")
     reho = nib.load(reho_path).get_fdata()  # 49, 58, 47
 
-    fc_path = os.path.join(dir_athena, "KKI_preproc", "KKI",
+    fc_path = os.path.join(dir_athena, "KKI_preproc",
                            f"{subject}", f"fc_snwmrda{subject}_session_1_rest_1.nii.gz")
     fc = nib.load(fc_path).get_fdata()  # 49, 58, 47, 1, 10
 
@@ -56,12 +59,12 @@ def fmri(subject, dx, idx):
 
     df = pd.DataFrame(columns=features)
 
-    # for x in range(25, 30):
-    #     for y in range(25, 30):
-    #         for z in range(25, 30):
-    for x in range(falff.shape[0]):
-        for y in range(falff.shape[1]):
-            for z in range(falff.shape[2]):
+    for x in range(25, 30):
+        for y in range(25, 30):
+            for z in range(25, 30):
+    # for x in range(falff.shape[0]):
+    #     for y in range(falff.shape[1]):
+    #         for z in range(falff.shape[2]):
                 row = [x, y, z]
                 for i in range(10):
                     row.append(fc[x][y][z][0][i])
@@ -73,12 +76,14 @@ def fmri(subject, dx, idx):
 
     print(f"Generated functional features for {subject}")
 
-    return df
+    save = os.path.join(save_path, f"func_features_{subject}.csv")
+
+    df.to_csv(save, index = False)
 
 
 if __name__ == "__main__":
     pheno_path = os.path.join(
-        dir_athena, "KKI_preproc", "KKI", "KKI_phenotypic.csv")
+        dir_athena, "KKI_preproc", "KKI_phenotypic.csv")
     pheno = pd.read_csv(pheno_path)
 
     subADHD = list()
@@ -99,25 +104,20 @@ if __name__ == "__main__":
     adhdFunc = pd.DataFrame()
     adhdAnat = pd.DataFrame()
 
-    print("Generating CSVs for Control set")
+    print("\nGenerating CSVs for Control set")
     for i in range(5):
         start = time.time()
         subID, dx, idx = subControl[i]
-        controlFunc = pd.concat([controlFunc, fmri(subID, dx, idx)], axis=0)
-        controlAnat = pd.concat([controlAnat, smri(subID, dx, idx)], axis=0)
+        fmri(subID, dx, idx, "./features/control/")
+        smri(subID, dx, idx, "./features/control/")
         end = time.time()
         print(f"Took {end - start}s")
 
-    print("Generating CSVs for ADHD set")
+    print("\nGenerating CSVs for ADHD set")
     for i in range(5):
         start = time.time()
         subID, dx, idx = subADHD[i]
-        adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, idx)], axis=0)
-        adhdAnat = pd.concat([adhdAnat, smri(subID, dx, idx)], axis=0)
+        fmri(subID, dx, idx, "./features/adhd/")
+        smri(subID, dx, idx, "./features/adhd/")
         end = time.time()
         print(f"Took {end - start}s")
-
-    controlFunc.to_csv("features/control_func.csv", index=False)
-    controlAnat.to_csv("features/control_anat.csv", index=False)
-    adhdFunc.to_csv("features/adhd_func.csv", index=False)
-    adhdAnat.to_csv("features/adhd_anat.csv", index=False)
