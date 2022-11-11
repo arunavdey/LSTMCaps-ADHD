@@ -25,9 +25,9 @@ def smri(subject, dx, idx, save_path="./features/"):
     for x in range(100, 105):
         for y in range(100, 105):
             for z in range(100, 105):
-    # for x in range(anat.shape[0]):
-    #     for y in range(anat.shape[1]):
-    #         for z in range(anat.shape[2]):
+                # for x in range(anat.shape[0]):
+                #     for y in range(anat.shape[1]):
+                #         for z in range(anat.shape[2]):
                 row = [x, y, z]
                 row.append(anat[x][y][z])
                 row.append(dx)
@@ -38,7 +38,7 @@ def smri(subject, dx, idx, save_path="./features/"):
 
     save = os.path.join(save_path, f"anat_features_{subject}.csv")
 
-    df.to_csv(save, index = False)
+    df.to_csv(save, index=False)
 
 
 def fmri(subject, dx, idx, save_path="./features/"):
@@ -62,9 +62,9 @@ def fmri(subject, dx, idx, save_path="./features/"):
     for x in range(25, 30):
         for y in range(25, 30):
             for z in range(25, 30):
-    # for x in range(falff.shape[0]):
-    #     for y in range(falff.shape[1]):
-    #         for z in range(falff.shape[2]):
+                # for x in range(falff.shape[0]):
+                #     for y in range(falff.shape[1]):
+                #         for z in range(falff.shape[2]):
                 row = [x, y, z]
                 for i in range(10):
                     row.append(fc[x][y][z][0][i])
@@ -78,7 +78,7 @@ def fmri(subject, dx, idx, save_path="./features/"):
 
     save = os.path.join(save_path, f"func_features_{subject}.csv")
 
-    df.to_csv(save, index = False)
+    df.to_csv(save, index=False)
 
 
 if __name__ == "__main__":

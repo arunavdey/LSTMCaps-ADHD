@@ -3,3 +3,6 @@ idk.*
 nilearn_cache
 __pycache__
 *.csv
+*.h5
+*.png
+backup*
