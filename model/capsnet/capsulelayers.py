@@ -41,8 +41,10 @@ class Mask(layers.Layer):
 def squash(vectors, axis=-1):
     s_squared_norm = tf.reduce_sum(
         tf.square(vectors), axis=axis, keepdims=True)
-    # scale = (s_squared_norm / (1 + s_squared_norm)) / tf.sqrt(s_squared_norm + K.epsilon())
-    scale = (s_squared_norm / (1 + s_squared_norm)) / tf.sqrt(s_squared_norm)
+
+    scale = (s_squared_norm / (1 + s_squared_norm)) / \
+        tf.sqrt(s_squared_norm + K.epsilon())
+    # scale = (s_squared_norm / (1 + s_squared_norm)) / tf.sqrt(s_squared_norm)
     return scale * vectors
 
 
@@ -103,8 +105,20 @@ class CapsuleLayer(layers.Layer):
 
 
 def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
-    output = layers.Conv3D(filters=dim_capsule*n_channels, kernel_size=kernel_size, strides=strides, padding=padding,
-                           name='primarycap_output')(inputs)
+
+    output = layers.Conv3D(
+        filters=dim_capsule*n_channels,
+        kernel_size=kernel_size,
+        strides=strides,
+        padding=padding,
+        name='primarycap_output')(inputs)
+
     outputs = layers.Reshape(
-        target_shape=[-1, dim_capsule], name='primarycap_outputs')(output)
-    return layers.Lambda(squash, name='primarycap_squash')(outputs)
+        target_shape=[-1, dim_capsule],
+        name='primarycap_outputs')(output)
+
+    squashed = layers.Lambda(
+        squash,  # squash function
+        name='primarycap_squash')(outputs)  # squashing outputs
+
+    return squashed
