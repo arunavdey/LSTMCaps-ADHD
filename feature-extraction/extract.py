@@ -7,117 +7,92 @@ import pandas as pd
 import tqdm
 
 dir_home = os.path.join("/mnt", "d")
-dir_athena = os.path.join(dir_home, "Assets", "ADHD200", "KKI_athena")
-dir_niak = os.path.join(dir_home, "Assets", "ADHD200", "KKI_niak")
+dir_adhd200 = os.path.join(dir_home, "Assets", "ADHD200")
+sites = ["Peking_1", "Peking_2", "Peking_3"]
+controlFunc = pd.DataFrame()
+adhdFunc = pd.DataFrame()
 
+'''
+# figure out a way to use athena pipeline and niak together for these features
 
-def smri(subject, dx, idx):
+def smri(subject, dx, site):
     anat_path = os.path.join(
-        dir_niak, "anat_kki", f"X_{subject}", f"anat_X_{subject}_classify_stereolin.nii.gz")
+        dir_adhd200, f"{site}_niak","anat_kki", f"X_{subject}", f"anat_X_{subject}_classify_stereolin.nii.gz")
     anat = nib.load(anat_path).get_fdata()
 
     # features = ['x', 'y', 'z', 'class', 'gm_density', 'wm_density', 'dx', 'idx'] # 8
-    features = ['x', 'y', 'z', 'class', 'idx', 'dx']
+    features = ['x', 'y', 'z', 'class', 'dx']
 
     df = pd.DataFrame(columns=features)
 
-    # for x in range(100, 105):
-    #     for y in range(100, 105):
-    #         for z in range(100, 105):
     for x in range(anat.shape[0]):
         for y in range(anat.shape[1]):
             for z in range(anat.shape[2]):
                 row = [x, y, z]
                 row.append(anat[x][y][z])
-                row.append(idx)
                 row.append(dx)
                 df.loc[len(df.index)] = row
 
-    print(f"Generated functional features for {subject}")
+    print(f"Generated anatomical features for {subject} from {site}")
 
     return df
+'''
 
-
-def fmri(subject, dx, idx):
-    falff_path = os.path.join(dir_athena, "KKI_falff_filtfix",
+def fmri(subject, dx, site):
+    falff_path = os.path.join(dir_adhd200, f"{site}_athena", f"{site}_falff_filtfix",
                               f"{subject}", f"falff_{subject}_session_1_rest_1.nii.gz")
     falff = nib.load(falff_path).get_fdata()  # 49, 58, 47
 
-    reho_path = os.path.join(dir_athena, "KKI_reho_filtfix",
+    reho_path = os.path.join(dir_adhd200, f"{site}_athena", f"{site}_reho_filtfix",
                              f"{subject}", f"reho_{subject}_session_1_rest_1.nii.gz")
     reho = nib.load(reho_path).get_fdata()  # 49, 58, 47
 
-    fc_path = os.path.join(dir_athena, "KKI_preproc",
+    fc_path = os.path.join(dir_adhd200, f"{site}_athena", f"{site}_preproc",
                            f"{subject}", f"fc_snwmrda{subject}_session_1_rest_1.nii.gz")
     fc = nib.load(fc_path).get_fdata()  # 49, 58, 47, 1, 10
 
     features = ['x', 'y', 'z', 'fc1', 'fc2', 'fc3', 'fc4', 'fc5', 'fc6',
-                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'idx', 'dx']  # 17
+                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'dx']  # 16
 
     df = pd.DataFrame(columns=features)
 
-    # for x in range(25, 30):
-    #     for y in range(25, 30):
-    #         for z in range(25, 30):
     for x in range(falff.shape[0]):
         for y in range(falff.shape[1]):
             for z in range(falff.shape[2]):
-                row = [x, y, z]
-                for i in range(10):
-                    row.append(fc[x][y][z][0][i])
-                row.append(falff[x][y][z])
-                row.append(reho[x][y][z])
-                row.append(idx)
-                row.append(dx)
-                df.loc[len(df.index)] = row
+                f0 = fc[x][y][z][0]
+                f1 = falff[x][y][z]
+                f2 = reho[x][y][z]
+                
+                if f1 != 0 and f2 != 0 and sum(f0) != 0:
+                    row = [x, y, z]
+                    for i in range(10):
+                        row.append(fc[x][y][z][0][i])
+                    row.append(falff[x][y][z])
+                    row.append(reho[x][y][z])
+                    row.append(dx)
+                    df.loc[len(df.index)] = row
 
-    print(f"Generated functional features for {subject}")
+                else:
+                    continue
+
+    print(f"Generated functional features for {subject} from {site}")
 
     return df
 
-
 if __name__ == "__main__":
-    pheno_path = os.path.join(
-        dir_athena, "KKI_preproc", "KKI_phenotypic.csv")
-    pheno = pd.read_csv(pheno_path)
 
-    subADHD = list()
-    subControl = list()
+    for site in sites:
+        pheno = pd.read_csv(os.path.join(dir_adhd200, f"{site}_athena", f"{site}_preproc", f"{site}_phenotypic.csv"))
 
-    for ind in pheno.index:
-        subID = pheno["ScanDir ID"][ind]
-        dx = pheno["DX"][ind]
-        idx = pheno["ADHD Index"][ind]
+        for ind in tqdm.tqdm(pheno.index):
+            subID = pheno["ScanDir ID"][ind]
+            dx = pheno["DX"][ind]
 
-        if dx == 0:
-            subControl.append((subID, dx, idx))
-        else:
-            subADHD.append((subID, dx, idx))
+            print(f"Current subject: {subID}\nSite: {site}")
+            if dx == 0:
+                controlFunc = pd.concat([controlFunc, fmri(subID, dx, site)], axis=0)
+            else:
+                adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, site)], axis=0)
 
-    controlFunc = pd.DataFrame()
-    controlAnat = pd.DataFrame()
-    adhdFunc = pd.DataFrame()
-    adhdAnat = pd.DataFrame()
-
-    print("\nGenerating CSVs for Control set")
-    for i in tqdm.tqdm(range(5)):
-        start = time.time()
-        subID, dx, idx = subControl[i]
-        controlFunc = pd.concat([controlFunc, fmri(subID, dx, idx)], axis=0)
-        # controlAnat = pd.concat([controlAnat, smri(subID, dx, idx)], axis=0)
-        end = time.time()
-        print(f"Took {end - start}s")
-
-    print("\nGenerating CSVs for ADHD set")
-    for i in tqdm.tqdm(range(5)):
-        start = time.time()
-        subID, dx, idx = subADHD[i]
-        adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, idx)], axis=0)
-        # adhdAnat = pd.concat([adhdAnat, smri(subID, dx, idx)], axis=0)
-        end = time.time()
-        print(f"Took {end - start}s")
-
-    controlFunc.to_csv("features/control_func.csv", index=False)
-    # controlAnat.to_csv("features/control_anat.csv", index=False)
-    adhdFunc.to_csv("features/adhd_func.csv", index=False)
-    # adhdAnat.to_csv("features/adhd_anat.csv", index=False)
+        adhdFunc.to_csv(f"features/{site}_adhd_func.csv", index=False)
+        controlFunc.to_csv(f"features/{site}_control_func.csv", index=False)

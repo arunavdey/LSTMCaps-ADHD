@@ -1,11 +1,11 @@
+import keras.backend as K
 import tensorflow as tf
-import tensorflow.keras.backend as K
-from tensorflow.keras import initializers, layers
+from keras import initializers, layers
 
 
 class Length(layers.Layer):
     def call(self, inputs, **kwargs):
-        return tf.sqrt(tf.reduce_sum(tf.square(inputs), -1) + K.epsilon())
+        return K.sqrt(tf.reduce_sum(K.square(inputs), -1) + K.epsilon())
 
     def compute_output_shape(self, input_shape):
         return input_shape[:-1]
@@ -21,10 +21,10 @@ class Mask(layers.Layer):
             assert len(inputs) == 2
             inputs, mask = inputs
         else:
-            x = tf.sqrt(tf.reduce_sum(tf.square(inputs), -1))
+            x = K.sqrt(tf.reduce_sum(K.square(inputs), -1))
             mask = tf.one_hot(indices=tf.argmax(x, 1), depth=x.shape[1])
 
-        masked = K.batch_flatten(inputs * tf.expand_dims(mask, -1))
+        masked = K.batch_flatten(inputs * K.expand_dims(mask, -1))
         return masked
 
     def compute_output_shape(self, input_shape):
@@ -40,11 +40,11 @@ class Mask(layers.Layer):
 
 def squash(vectors, axis=-1):
     s_squared_norm = tf.reduce_sum(
-        tf.square(vectors), axis=axis, keepdims=True)
+        K.square(vectors), axis=axis, keepdims=True)
 
     scale = (s_squared_norm / (1 + s_squared_norm)) / \
-        tf.sqrt(s_squared_norm + K.epsilon())
-    # scale = (s_squared_norm / (1 + s_squared_norm)) / tf.sqrt(s_squared_norm)
+        K.sqrt(s_squared_norm + K.epsilon())
+
     return scale * vectors
 
 
@@ -60,7 +60,7 @@ class CapsuleLayer(layers.Layer):
 
     def build(self, input_shape):
         assert len(
-            input_shape) >= 3, "The input Tensor should have shape=[None, input_num_capsule, input_dim_capsule]"
+            input_shape) >= 3, "Input tensor should have shape = [None, input_num_capsule, input_dim_capsule]"
         self.input_num_capsule = input_shape[1]
         self.input_dim_capsule = input_shape[2]
 
@@ -72,14 +72,16 @@ class CapsuleLayer(layers.Layer):
         self.built = True
 
     def call(self, inputs, training=None):
-        inputs_expand = tf.expand_dims(tf.expand_dims(inputs, 1), -1)
-        inputs_tiled = tf.tile(inputs_expand, [1, self.num_capsule, 1, 1, 1])
+        inputs_expand = K.expand_dims(K.expand_dims(inputs, 1), -1)
+        inputs_tiled = K.tile(inputs_expand, [1, self.num_capsule, 1, 1, 1])
         inputs_hat = tf.squeeze(
-            tf.map_fn(lambda x: tf.matmul(self.W, x), elems=inputs_tiled))
+            K.map_fn(lambda x: tf.matmul(self.W, x), elems=inputs_tiled))
 
         # Routing algo
         b = tf.zeros(
             shape=[inputs.shape[0], self.num_capsule, 1, self.input_num_capsule])
+
+        outputs = None
 
         assert self.routings > 0, 'The routings should be > 0.'
         for i in range(self.routings):
@@ -111,14 +113,12 @@ def PrimaryCap(inputs, dim_capsule, n_channels, kernel_size, strides, padding):
         kernel_size=kernel_size,
         strides=strides,
         padding=padding,
-        name='primarycap_output')(inputs)
+        name='PrimaryCap_output')(inputs)
 
     outputs = layers.Reshape(
         target_shape=[-1, dim_capsule],
-        name='primarycap_outputs')(output)
+        name='PrimaryCap_outputs')(output)
 
-    squashed = layers.Lambda(
-        squash,  # squash function
-        name='primarycap_squash')(outputs)  # squashing outputs
+    squashed = layers.Lambda(squash, name='PrimaryCap_squash')(outputs)
 
     return squashed
