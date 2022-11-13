@@ -2,7 +2,6 @@ import keras.backend as K
 import tensorflow as tf
 from keras import initializers, layers
 
-
 class Length(layers.Layer):
     def call(self, inputs, **kwargs):
         return K.sqrt(tf.reduce_sum(K.square(inputs), -1) + K.epsilon())
