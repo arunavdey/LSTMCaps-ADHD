@@ -10,34 +10,29 @@ from capsulelayers import CapsuleLayer, Length, Mask, PrimaryCap
 from keras import backend as K
 from keras import callbacks, layers, models, optimizers
 from keras.utils import to_categorical
-from utils import plot_log
+# from utils import plot_log
 
 K.set_image_data_format('channels_last')
 
 
 def CapsNet(input_shape, n_class, routings, batch_size):
 
+    # generating inverse graphics
     x = layers.Input(shape=input_shape, batch_size=batch_size)
-
     conv1 = layers.Conv3D(filters=128, kernel_size=11, strides=1,
                           padding='valid', activation='relu', name='conv1')(x)
-
     pool1 = layers.AveragePooling3D(
         pool_size=2, padding='valid', name='pool1')(conv1)
-
     primarycaps = PrimaryCap(inputs=pool1, dim_capsule=32, n_channels=4,
                              kernel_size=11, strides=2, padding='valid')
-
     capslayer = CapsuleLayer(num_capsule=n_class, dim_capsule=32,
                              routings=routings, name='CapsLayer')(primarycaps)
-
     out_caps = Length(name='out_caps')(capslayer)
 
-    # Decoder network.
+    # decoder network
     y = layers.Input(shape=(n_class,))
     masked_by_y = Mask()([capslayer, y])
     masked = Mask()(capslayer)
-
     decoder = models.Sequential(name='decoder')
     decoder.add(layers.Dense(512, activation='relu', input_dim=32 * n_class))
     decoder.add(layers.Dense(1024, activation='relu'))
@@ -67,8 +62,8 @@ def euclidean_distance_loss(y_true, y_pred):
 def train(model, data, args):
     (x_train, y_train), (x_test, y_test) = data
 
-    log = callbacks.CSVLogger(args.save_dir + '/log.csv')
-    checkpoint = callbacks.ModelCheckpoint(args.save_dir + '/weights-{epoch:02d}.h5', monitor='val_out_caps_accuracy',
+    log = callbacks.CSVLogger('./logs/capsnet_logs.csv')
+    checkpoint = callbacks.ModelCheckpoint('./weights/capsnet_weights-{epoch:02d}.h5', monitor='val_out_caps_accuracy',
                                            save_best_only=True, save_weights_only=True, verbose=1)
     lr_decay = callbacks.LearningRateScheduler(
         schedule=lambda epoch: args.learning_rate * (args.lr_decay ** epoch))
@@ -81,12 +76,14 @@ def train(model, data, args):
     model.fit(x=[x_train, y_train], y=[y_train, x_train], batch_size=args.batch_size, epochs=args.epochs,
               validation_data=[[x_test, y_test], [y_test, x_test]], callbacks=[log, checkpoint, lr_decay])
 
-    model.save_weights(args.save_dir + '/capsnet_trained.h5')
-    print('Trained model saved to \'%s/capsnet_trained.h5\'' % args.save_dir)
+    model.save_weights('./saved-models/capsnet_trained.h5')
+    print("Trained model saved to \'%s./saved-models/capsnet_trained.h5\'")
 
-    plot_log(args.save_dir + '/log.csv', show=True)
+    # plot_log('./logs/capsnet_train_log.csv', show=True)
 
-    return model
+    y_pred, x_recon = model.predict([x_test, y_test], batch_size=2)
+
+    return y_pred
 
 
 def test(model, data, args):
@@ -143,9 +140,9 @@ def load_data():
 
 def get_model():
     parser = argparse.ArgumentParser(description="Capsule Network")
-    parser.add_argument('-e', '--epochs', default=10, type=int)
-    parser.add_argument('-b', '--batch_size', default=3, type=int)
-    parser.add_argument('--learning_rate', default=0.1, type=float)
+    parser.add_argument('-e', '--epochs', default=5, type=int)
+    parser.add_argument('-b', '--batch_size', default=2, type=int)
+    parser.add_argument('--learning_rate', default=0.0001, type=float)
     parser.add_argument('--lr_decay', default=0.95, type=float)
     parser.add_argument('--lam_recon', default=0.9, type=float)
     parser.add_argument('-r', '--routings', default=4, type=int)
