@@ -140,7 +140,7 @@ def load_data():
 
 def get_model():
     parser = argparse.ArgumentParser(description="Capsule Network")
-    parser.add_argument('-e', '--epochs', default=5, type=int)
+    parser.add_argument('-e', '--epochs', default=10, type=int)
     parser.add_argument('-b', '--batch_size', default=2, type=int)
     parser.add_argument('--learning_rate', default=0.0001, type=float)
     parser.add_argument('--lr_decay', default=0.95, type=float)
