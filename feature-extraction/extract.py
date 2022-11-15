@@ -8,7 +8,7 @@ import tqdm
 
 from densities import density
 
-dir_home = os.path.join("/mnt", "d")
+dir_home = os.path.join("/mnt", "hdd")
 dir_adhd200 = os.path.join(dir_home, "Assets", "ADHD200")
 sites = ["KKI", "Peking_1", "Peking_2", "Peking_3"]
 controlFunc = pd.DataFrame()
@@ -24,10 +24,10 @@ def smri(subject, dx, site):
     wm_path = os.path.join(dir_adhd200, f"{site}_athena",f"{site}_preproc", f"{subject}", f"wssd{subject}_session_1_anat_wm.nii.gz")
     csf_path = os.path.join(dir_adhd200, f"{site}_athena",f"{site}_preproc", f"{subject}", f"wssd{subject}_session_1_anat_csf.nii.gz")
 
-    anat = nib.load(anat_path).get_fdata()
-    gm = nib.load(gm_path).get_fdata()
-    wm = nib.load(wm_path).get_fdata()
-    csf = nib.load(csf_path).get_fdata()
+    anat = nib.load(anat_path).get_fdata()  # 197, 233, 189
+    gm = nib.load(gm_path).get_fdata()      # 197, 233, 189
+    wm = nib.load(wm_path).get_fdata()      # 197, 233, 189
+    csf = nib.load(csf_path).get_fdata()    # 197, 233, 189
 
     features = ['x', 'y', 'z', 'gm_density', 'wm_density', 'csf_density', 'gm', 'wm', 'csf', 'dx'] # 10
 
@@ -42,16 +42,18 @@ def smri(subject, dx, site):
                 f1 = wm[x][y][z]
                 f2 = csf[x][y][z]
 
-                if f0 != 0 and f1 != 0 and f2 != 0:
-                    row = [x, y, z, gm_density, wm_density, csf_density]
-                    row.append(gm)
-                    row.append(wm)
-                    row.append(csf)
-                    row.append(dx)
-                    row.loc[len(df.index)] = row
+                if f0 == 0 and f1 == 0 and f2 == 0:
+                    continue
 
                 else:
-                    continue
+                    row = [x, y, z, gm_density, wm_density, csf_density]
+                    row.append(f0)
+                    row.append(f1)
+                    row.append(f2)
+                    row.append(dx)
+                    df.loc[len(df.index)] = row
+
+    print(df.shape)
 
     print(f"Generated anatomical features for {subject} from {site}")
 
@@ -93,6 +95,7 @@ def fmri(subject, dx, site):
 
                 else:
                     continue
+    print(df.shape)
 
     print(f"Generated functional features for {subject} from {site}")
 
@@ -111,10 +114,12 @@ if __name__ == "__main__":
 
             if dx == 0:
                 controlFunc = pd.concat([controlFunc, fmri(subID, dx, site)], axis=0)
-                controlAnat = pd.concat([controlAnat, smri(subID, dx, site)], axis=0)
+                # controlAnat = pd.concat([controlAnat, smri(subID, dx, site)], axis=0)
             else:
                 adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, site)], axis=0)
-                adhdAnat = pd.concat([adhdAnat, smri(subID, dx, site)], axis=0)
+                # adhdAnat = pd.concat([adhdAnat, smri(subID, dx, site)], axis=0)
 
         adhdFunc.to_csv(f"features/{site}_adhd_func.csv", index=False)
         controlFunc.to_csv(f"features/{site}_control_func.csv", index=False)
+        adhdAnat.to_csv(f"features/{site}_adhd_anat.csv", index=False)
+        controlAnat.to_csv(f"features/{site}_control_anat.csv", index=False)
