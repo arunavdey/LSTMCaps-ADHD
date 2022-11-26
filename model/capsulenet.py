@@ -19,14 +19,15 @@ def CapsNet(input_shape, n_class, routings, batch_size):
 
     # generating inverse graphics
     x = layers.Input(shape=input_shape, batch_size=batch_size)
-    conv1 = layers.Conv3D(filters=128, kernel_size=11, strides=1,
+    conv1 = layers.Conv3D(filters=1024, kernel_size=11, strides=1,
                           padding='valid', activation='relu', name='conv1')(x)
     pool1 = layers.AveragePooling3D(
-        pool_size=2, padding='valid', name='pool1')(conv1)
+        pool_size=4, padding='valid', name='pool1')(conv1)
     primarycaps = PrimaryCap(inputs=pool1, dim_capsule=32, n_channels=4,
-                             kernel_size=11, strides=2, padding='valid')
+                             kernel_size=5, strides=2, padding='valid')
     capslayer = CapsuleLayer(num_capsule=n_class, dim_capsule=32,
                              routings=routings, name='CapsLayer')(primarycaps)
+
     out_caps = Length(name='out_caps')(capslayer)
 
     # decoder network
@@ -34,10 +35,20 @@ def CapsNet(input_shape, n_class, routings, batch_size):
     masked_by_y = Mask()([capslayer, y])
     masked = Mask()(capslayer)
     decoder = models.Sequential(name='decoder')
-    decoder.add(layers.Dense(512, activation='relu', input_dim=32 * n_class))
-    decoder.add(layers.Dense(1024, activation='relu'))
-    decoder.add(layers.Dense(1024, activation='relu'))
-    decoder.add(layers.Dense(np.prod(input_shape), activation='sigmoid'))
+    # decoder.add(layers.Dense(512, activation='relu', input_dim=32 * n_class))
+    # decoder.add(layers.Dense(1024, activation='relu'))
+    # decoder.add(layers.Dense(1024, activation='relu'))
+    # decoder.add(layers.Dense(np.prod(input_shape), activation='sigmoid'))
+
+    decoder.add(layers.LSTM(512, input_shape = (32 * n_class, 1), return_sequences = True))
+    decoder.add(layers.LSTM(512, return_sequences = True))
+    decoder.add(layers.LSTM(512, return_sequences = True))
+    decoder.add(layers.LSTM(256, activation = 'relu'))
+    decoder.add(layers.BatchNormalization())
+    decoder.add(layers.Dense(512, activation = 'relu'))
+    decoder.add(layers.Dropout(0.5))
+    decoder.add(layers.Dense(512, activation = 'relu'))
+    decoder.add(layers.Dense(np.prod(input_shape), activation = 'sigmoid'))
     decoder.add(layers.Reshape(target_shape=input_shape, name='out_recon'))
 
     # Models for training and evaluation
@@ -95,7 +106,7 @@ def test(model, data, args):
 
 
 def load_data():
-    dir_home = os.path.join("/mnt", "d")
+    dir_home = os.path.join("/mnt", "hdd")
     kki_athena = os.path.join(dir_home, "Assets", "ADHD200", "KKI_athena")
 
     kki_pheno_path = os.path.join(
@@ -122,8 +133,8 @@ def load_data():
     print(x.shape)
     print(y.shape)
 
-    x_train, x_test = x[:64], x[64:80]
-    y_train, y_test = y[:64], y[64:80]
+    x_train, x_test = x[:66], x[66:82]
+    y_train, y_test = y[:66], y[66:82]
 
     # x_train = x_train.reshape(-1, 197, 233, 189, 1).astype('float32') / 255.
     x_train = x_train.reshape(-1, 49, 58, 47, 1).astype('float32') / 255.
@@ -140,12 +151,12 @@ def load_data():
 
 def get_model():
     parser = argparse.ArgumentParser(description="Capsule Network")
-    parser.add_argument('-e', '--epochs', default=10, type=int)
+    parser.add_argument('-e', '--epochs', default=1, type=int)
     parser.add_argument('-b', '--batch_size', default=2, type=int)
-    parser.add_argument('--learning_rate', default=0.0001, type=float)
-    parser.add_argument('--lr_decay', default=0.95, type=float)
+    parser.add_argument('--learning_rate', default=1e-3, type=float)
+    parser.add_argument('--lr_decay', default=0.995, type=float)
     parser.add_argument('--lam_recon', default=0.9, type=float)
-    parser.add_argument('-r', '--routings', default=4, type=int)
+    parser.add_argument('-r', '--routings', default=10, type=int)
     parser.add_argument('--debug', action='store_true')
     parser.add_argument('--save_dir', default='./result')
     parser.add_argument('-t', '--testing', action='store_true')

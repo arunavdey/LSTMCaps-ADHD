@@ -10,8 +10,8 @@ from lstm import get_model as getLSTMNet
 
 models = [getCapsNet(), getLSTMNet()]
 
-print(models[0].shape)  # y_pred; 16, 4
-print(models[1].shape)  # 410, 4
+print(models[0].shape)  # 16, 4
+print(models[1].shape)  # aVeryBigNumber, 4
 
 
 for model in models:

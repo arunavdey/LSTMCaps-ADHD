@@ -49,7 +49,7 @@ def squash(vectors, axis=-1):
 
 class CapsuleLayer(layers.Layer):
     def __init__(self, num_capsule, dim_capsule, routings=3,
-                 kernel_initializer='glorot_uniform',
+                 kernel_initializer='lecun_uniform',
                  **kwargs):
         super(CapsuleLayer, self).__init__(**kwargs)
         self.num_capsule = num_capsule

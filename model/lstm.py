@@ -7,7 +7,6 @@ from keras.layers import (LSTM, BatchNormalization,
 from keras.losses import SparseCategoricalCrossentropy
 from keras.models import Model
 from keras.optimizers import Adam
-# from utils import plot_log
 
 
 def load_data():
@@ -64,7 +63,7 @@ def get_model():
 
     model.summary()
 
-    model.fit(x_train, y_train, epochs=5, batch_size=2048,
+    model.fit(x_train, y_train, epochs=1, batch_size=2048,
               validation_data=(x_test, y_test), callbacks=[log, checkpoint])
 
     model.save_weights("./saved-models/lstm_trained.h5")
