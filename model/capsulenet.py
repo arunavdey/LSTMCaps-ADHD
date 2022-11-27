@@ -10,9 +10,9 @@ from capsulelayers import CapsuleLayer, Length, Mask, PrimaryCap
 from keras import backend as K
 from keras import callbacks, layers, models, optimizers
 from keras.utils import to_categorical
-# from utils import plot_log
+from utils import load_data_mri
 
-K.set_image_data_format('channels_last')
+# K.set_image_data_format('channels_last')
 
 
 def CapsNet(input_shape, n_class, routings, batch_size):
@@ -35,20 +35,22 @@ def CapsNet(input_shape, n_class, routings, batch_size):
     masked_by_y = Mask()([capslayer, y])
     masked = Mask()(capslayer)
     decoder = models.Sequential(name='decoder')
-    # decoder.add(layers.Dense(512, activation='relu', input_dim=32 * n_class))
-    # decoder.add(layers.Dense(1024, activation='relu'))
-    # decoder.add(layers.Dense(1024, activation='relu'))
-    # decoder.add(layers.Dense(np.prod(input_shape), activation='sigmoid'))
-
-    decoder.add(layers.LSTM(512, input_shape = (32 * n_class, 1), return_sequences = True))
-    decoder.add(layers.LSTM(512, return_sequences = True))
-    decoder.add(layers.LSTM(512, return_sequences = True))
-    decoder.add(layers.LSTM(256, activation = 'relu'))
+    decoder.add(layers.Dense(512, activation='relu', input_dim=32 * n_class))
     decoder.add(layers.BatchNormalization())
-    decoder.add(layers.Dense(512, activation = 'relu'))
-    decoder.add(layers.Dropout(0.5))
-    decoder.add(layers.Dense(512, activation = 'relu'))
-    decoder.add(layers.Dense(np.prod(input_shape), activation = 'sigmoid'))
+    decoder.add(layers.Dense(1024, activation='relu'))
+    decoder.add(layers.Dense(1024, activation='relu'))
+    decoder.add(layers.BatchNormalization())
+    decoder.add(layers.Dense(np.prod(input_shape), activation='sigmoid'))
+
+    # decoder.add(layers.LSTM(512, input_shape = (32 * n_class, 1), return_sequences = True))
+    # decoder.add(layers.LSTM(512, return_sequences = True))
+    # decoder.add(layers.LSTM(512, return_sequences = True))
+    # decoder.add(layers.LSTM(256, activation = 'relu'))
+    # decoder.add(layers.BatchNormalization())
+    # decoder.add(layers.Dense(512, activation = 'relu'))
+    # decoder.add(layers.Dropout(0.5))
+    # decoder.add(layers.Dense(512, activation = 'relu'))
+    # decoder.add(layers.Dense(np.prod(input_shape), activation = 'sigmoid'))
     decoder.add(layers.Reshape(target_shape=input_shape, name='out_recon'))
 
     # Models for training and evaluation
@@ -105,51 +107,7 @@ def test(model, data, args):
           == np.argmax(y_test, 1)) / y_test.shape[0])
 
 
-def load_data():
-    dir_home = os.path.join("/mnt", "hdd")
-    kki_athena = os.path.join(dir_home, "Assets", "ADHD200", "KKI_athena")
-
-    kki_pheno_path = os.path.join(
-        kki_athena, "KKI_preproc", "KKI_phenotypic.csv")
-    kki_pheno = pd.read_csv(kki_pheno_path)
-
-    kki_preproc = os.path.join(kki_athena, "KKI_preproc")
-
-    kki_subs = kki_pheno["ScanDir ID"].to_numpy()
-
-    x = list()
-
-    for sub in tqdm.tqdm(kki_subs, desc='Loading kki'):
-        scan_path = os.path.join(
-            kki_preproc, f"{sub}", f"wmean_mrda{sub}_session_1_rest_1.nii.gz")
-
-        scan = nib.load(scan_path).get_fdata()
-        x.append(scan)
-
-    x = np.array(x)
-
-    y = kki_pheno["DX"].to_numpy()
-
-    print(x.shape)
-    print(y.shape)
-
-    x_train, x_test = x[:66], x[66:82]
-    y_train, y_test = y[:66], y[66:82]
-
-    # x_train = x_train.reshape(-1, 197, 233, 189, 1).astype('float32') / 255.
-    x_train = x_train.reshape(-1, 49, 58, 47, 1).astype('float32') / 255.
-
-    # x_test = x_test.reshape(-1, 197, 233, 189, 1).astype('float32') / 255.
-    x_test = x_test.reshape(-1, 49, 58, 47, 1).astype('float32') / 255.
-
-    y_train = to_categorical(y_train.astype('float32'))
-
-    y_test = to_categorical(y_test.astype('float32'))
-
-    return (x_train, y_train), (x_test, y_test)
-
-
-def get_model():
+def get_args():
     parser = argparse.ArgumentParser(description="Capsule Network")
     parser.add_argument('-e', '--epochs', default=1, type=int)
     parser.add_argument('-b', '--batch_size', default=2, type=int)
@@ -164,24 +122,29 @@ def get_model():
     parser.add_argument('--shift_fraction', default=0.1, type=float)
     args = parser.parse_args()
 
+    return args
+
+
+def get_model():
+    args = get_args()
+
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    (x_train, y_train), (x_test, y_test) = load_data()
+    (x_train, y_train), (x_test, y_test) = load_data_mri()
 
     model, eval_model = CapsNet(input_shape=x_train.shape[1:],
                                 n_class=4,
                                 routings=args.routings,
                                 batch_size=args.batch_size)
-    model.summary()
 
-    if args.weights is not None:
-        model.load_weights(args.weights)
-    if not args.testing:
-        return train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
-    else:
-        test(model=eval_model, data=(x_test, y_test), args=args)
+    return model
 
-
-if __name__ == "__main__":
-    get_model()
+    # if args.weights is not None:
+    #     model.load_weights(args.weights)
+    # if not args.testing:
+    #     return train(model=model, data=((x_train, y_train), (x_test, y_test)), args=args)
+    # else:
+    #     test(model=eval_model, data=(x_test, y_test), args=args)
+# if __name__ == "__main__":
+#     get_model()

@@ -1,53 +1,72 @@
 import numpy as np
-from matplotlib import pyplot as plt
-import csv
-import math
-import pandas
+import pandas as pd
+import nibabel as nib
+from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import train_test_split
+from keras.utils import to_categorical
+import os
 
-def plot_log(filename, show=True):
+def load_data_csv():
+    adhd = pd.read_csv(
+        "../feature-extraction/features/KKI_adhd_func.csv")
+    control = pd.read_csv(
+        "../feature-extraction/features/KKI_control_func.csv")
 
-    data = pandas.read_csv(filename)
+    data = pd.concat([adhd, control])
 
-    fig = plt.figure(figsize=(4,6))
-    fig.subplots_adjust(top=0.95, bottom=0.05, right=0.95)
-    fig.add_subplot(211)
-    for key in data.keys():
-        if key.find('loss') >= 0 and not key.find('val') >= 0:  # training loss
-            plt.plot(data['epoch'].values, data[key].values, label=key)
-    plt.legend()
-    plt.title('Training loss')
+    x = data.iloc[1:, 0:-1]
+    y = data.iloc[1:, -1]
+    # x = data.iloc[1:2048, 0:-1]
+    # y = data.iloc[1:2048, -1]
 
-    fig.add_subplot(212)
-    for key in data.keys():
-        if key.find('acc') >= 0:  # acc
-            plt.plot(data['epoch'].values, data[key].values, label=key)
-    plt.legend()
-    plt.title('Training and validation accuracy')
+    ss = StandardScaler()
+    x = ss.fit_transform(x)
 
-    fig.savefig('result/log.png')
-    if show:
-        plt.show()
+    x = x.astype('float32') / 255.0 # normalised to between 0 and 1
+    y = y.astype('float32')
+
+    x_train, x_test, y_train, y_test = train_test_split(
+        x, y, test_size=0.2, random_state=0)
+
+    return (x_train, y_train), (x_test, y_test)
+
+def load_data_mri():
+    dir_home = os.path.join("/mnt", "hdd")
+    kki_athena = os.path.join(dir_home, "Assets", "ADHD200", "KKI_athena")
+
+    kki_pheno_path = os.path.join(
+        kki_athena, "KKI_preproc", "KKI_phenotypic.csv")
+    kki_pheno = pd.read_csv(kki_pheno_path)
+
+    kki_preproc = os.path.join(kki_athena, "KKI_preproc")
+
+    kki_subs = kki_pheno["ScanDir ID"].to_numpy()
+
+    x = list()
+
+    for sub in kki_subs:
+        scan_path = os.path.join(
+            kki_preproc, f"{sub}", f"wmean_mrda{sub}_session_1_rest_1.nii.gz")
+
+        scan = nib.load(scan_path).get_fdata()
+        x.append(scan)
+
+    x = np.array(x)
+
+    y = kki_pheno["DX"].to_numpy()
 
 
-def combine_images(generated_images, height=None, width=None):
-    num = generated_images.shape[0]
-    if width is None and height is None:
-        width = int(math.sqrt(num))
-        height = int(math.ceil(float(num)/width))
-    elif width is not None and height is None:  # height not given
-        height = int(math.ceil(float(num)/width))
-    elif height is not None and width is None:  # width not given
-        width = int(math.ceil(float(num)/height))
+    x_train, x_test = x[:66], x[66:82]
+    y_train, y_test = y[:66], y[66:82]
 
-    shape = generated_images.shape[1:3]
-    image = np.zeros((height*shape[0], width*shape[1]),
-                     dtype=generated_images.dtype)
-    for index, img in enumerate(generated_images):
-        i = int(index/width)
-        j = index % width
-        image[i*shape[0]:(i+1)*shape[0], j*shape[1]:(j+1)*shape[1]] = \
-            img[:, :, 0]
-    return image
+    # x_train = x_train.reshape(-1, 197, 233, 189, 1).astype('float32') / 255.
+    x_train = x_train.reshape(-1, 49, 58, 47, 1).astype('float32') / 255.
 
-if __name__=="__main__":
-    plot_log('result/log.csv')
+    # x_test = x_test.reshape(-1, 197, 233, 189, 1).astype('float32') / 255.
+    x_test = x_test.reshape(-1, 49, 58, 47, 1).astype('float32') / 255.
+
+    y_train = to_categorical(y_train.astype('float32'))
+
+    y_test = to_categorical(y_test.astype('float32'))
+
+    return (x_train, y_train), (x_test, y_test)
