@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import tqdm
 
-from densities import density
+from utils.densities import density
 
 dir_home = os.path.join("/mnt", "hdd")
 dir_adhd200 = os.path.join(dir_home, "Assets", "ADHD200")
@@ -15,8 +15,6 @@ controlFunc = pd.DataFrame()
 adhdFunc = pd.DataFrame()
 controlAnat = pd.DataFrame()
 adhdAnat = pd.DataFrame()
-
-# figure out a way to use athena pipeline and niak together for these features
 
 def smri(subject, dx, site):
     anat_path = os.path.join(dir_adhd200, f"{site}_athena",f"{site}_preproc", f"{subject}", f"wssd{subject}_session_1_anat.nii.gz")
@@ -53,7 +51,7 @@ def smri(subject, dx, site):
                     row.append(dx)
                     df.loc[len(df.index)] = row
 
-    print(df.shape)
+    print(df.shape) # rows x number of features
 
     print(f"Generated anatomical features for {subject} from {site}")
 
@@ -95,7 +93,7 @@ def fmri(subject, dx, site):
 
                 else:
                     continue
-    print(df.shape)
+    print(df.shape) # rows x number of features
 
     print(f"Generated functional features for {subject} from {site}")
 
@@ -103,10 +101,15 @@ def fmri(subject, dx, site):
 
 if __name__ == "__main__":
 
+
     for site in sites:
         pheno = pd.read_csv(os.path.join(dir_adhd200, f"{site}_athena", f"{site}_preproc", f"{site}_phenotypic.csv"))
 
+        controlRows = pd.DataFrame(columns=["subj", "end"])
+        adhdRows = pd.DataFrame(columns=["subj", "end"])
+        
         for ind in tqdm.tqdm(pheno.index):
+
             subID = pheno["ScanDir ID"][ind]
             dx = pheno["DX"][ind]
 
@@ -114,12 +117,18 @@ if __name__ == "__main__":
 
             if dx == 0:
                 controlFunc = pd.concat([controlFunc, fmri(subID, dx, site)], axis=0)
+                lastRow = controlFunc.tail(1).index[0]
                 # controlAnat = pd.concat([controlAnat, smri(subID, dx, site)], axis=0)
+                controlRows.loc[len(controlRows.index)] = [subID, lastRow]
             else:
                 adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, site)], axis=0)
+                lastRow = adhdFunc.tail(1).index[0]
                 # adhdAnat = pd.concat([adhdAnat, smri(subID, dx, site)], axis=0)
+                adhdRows.loc[len(adhdRows.index)] = [subID, lastRow]
 
         adhdFunc.to_csv(f"features/{site}_adhd_func.csv", index=False)
         controlFunc.to_csv(f"features/{site}_control_func.csv", index=False)
         adhdAnat.to_csv(f"features/{site}_adhd_anat.csv", index=False)
         controlAnat.to_csv(f"features/{site}_control_anat.csv", index=False)
+        adhdRows.to_csv(f"features/{site}_adhd_rows_func.csv", index=False)
+        controlRows.to_csv(f"features/{site}_control_rows_func.csv", index=False)

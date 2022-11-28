@@ -6,11 +6,11 @@ from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
 import os
 
-def load_data_csv():
+def load_data_csv(site):
     adhd = pd.read_csv(
-        "../feature-extraction/features/KKI_adhd_func.csv")
+        f"../feature-extraction/features/{site}_adhd_func.csv")
     control = pd.read_csv(
-        "../feature-extraction/features/KKI_control_func.csv")
+        f"../feature-extraction/features/{site}_control_func.csv")
 
     data = pd.concat([adhd, control])
 
@@ -30,30 +30,30 @@ def load_data_csv():
 
     return (x_train, y_train), (x_test, y_test)
 
-def load_data_mri():
+def load_data_mri(site):
     dir_home = os.path.join("/mnt", "hdd")
-    kki_athena = os.path.join(dir_home, "Assets", "ADHD200", "KKI_athena")
+    athena = os.path.join(dir_home, "Assets", "ADHD200", f"{site}_athena")
 
-    kki_pheno_path = os.path.join(
-        kki_athena, "KKI_preproc", "KKI_phenotypic.csv")
-    kki_pheno = pd.read_csv(kki_pheno_path)
+    pheno_path = os.path.join(
+        athena, f"{site}_preproc", f"{site}_phenotypic.csv")
+    pheno = pd.read_csv(pheno_path)
 
-    kki_preproc = os.path.join(kki_athena, "KKI_preproc")
+    preproc = os.path.join(athena, f"{site}_preproc")
 
-    kki_subs = kki_pheno["ScanDir ID"].to_numpy()
+    subs = pheno["ScanDir ID"].to_numpy()
 
     x = list()
 
-    for sub in kki_subs:
+    for sub in subs:
         scan_path = os.path.join(
-            kki_preproc, f"{sub}", f"wmean_mrda{sub}_session_1_rest_1.nii.gz")
+            preproc, f"{sub}", f"wmean_mrda{sub}_session_1_rest_1.nii.gz")
 
         scan = nib.load(scan_path).get_fdata()
         x.append(scan)
 
     x = np.array(x)
 
-    y = kki_pheno["DX"].to_numpy()
+    y = pheno["DX"].to_numpy()
 
 
     x_train, x_test = x[:66], x[66:82]
