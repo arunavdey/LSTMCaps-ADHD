@@ -1,5 +1,7 @@
 import keras
+import os
 import numpy as np
+import pandas as pd
 from capsulenet import get_model as getCapsNet
 from capsulenet import euclidean_distance_loss, margin_loss
 from capsulenet import get_args
@@ -12,22 +14,26 @@ dir_home = os.path.join("/mnt", "hdd")
 dir_adhd200 = os.path.join(dir_home, "Assets", "ADHD200")
 sites = ["KKI", "Peking_1", "Peking_2", "Peking_3"]
 
-def train_capsnet(site):
+def trainCapsNet(site):
     model = getCapsNet()
     (x_train, y_train), (x_test, y_test) = load_data_mri(site)
     args = get_args()
 
     log = callbacks.CSVLogger(f'./logs/{site}_capsnet_logs.csv')
-    checkpoint = callbacks.ModelCheckpoint(f'./weights/{site}_capsnet_weights-{epoch:02d}.h5', monitor='val_out_caps_accuracy',
-                                           save_best_only=True, save_weights_only=True, verbose=1)
+
+    checkpoint = callbacks.ModelCheckpoint(
+            f'./weights/{site}_capsnet_weights.h5', monitor='val_out_caps_accuracy', 
+            save_best_only=True, save_weights_only=True, verbose=1)
+
     lr_decay = callbacks.LearningRateScheduler(
         schedule=lambda epoch: args.learning_rate * (args.lr_decay ** epoch))
+
     model.compile(optimizer=optimizers.Adam(learning_rate=args.learning_rate),
                   loss=[margin_loss, euclidean_distance_loss],
                   loss_weights=[1., args.lam_recon],
                   metrics={'out_caps': 'accuracy'})
 
-    model.fit(x=[x_train, y_train], y=[y_train, x_train], batch_size=args.batch_size, epochs=args.epochs,
+    model.fit(x=[x_train, y_train], y=[y_train, x_train], batch_size=2, epochs=10,
               validation_data=[[x_test, y_test], [y_test, x_test]], callbacks=[log, checkpoint, lr_decay])
 
 
@@ -37,20 +43,20 @@ def train_capsnet(site):
 
     return y_pred
 
-def train_lstmnet(site):
+def trainLSTMNet(site):
     model = getLSTMNet()
     (x_train, y_train), (x_test, y_test) = load_data_csv(site)
 
     log = callbacks.CSVLogger(f'./logs/{site}_lstm_logs.csv')
-    checkpoint = callbacks.ModelCheckpoint(f'./weights/{site}_lstm_weights-{epoch:02d}.h5', monitor='val_accuracy',
+
+    checkpoint = callbacks.ModelCheckpoint(f'./weights/{site}_lstm_weights.h5', monitor='val_accuracy',
                                            save_best_only=True, save_weights_only=True, verbose=1)
 
     model.compile(loss=losses.SparseCategoricalCrossentropy(),
-                  optimizer=optimizers.Adam(learning_rate=0.1), metrics=['accuracy'])
+                  optimizer=optimizers.Adam(learning_rate=0.01), metrics=['accuracy'])
 
-    # model.summary()
 
-    model.fit(x_train, y_train, epochs=1, batch_size=2048,
+    model.fit(x_train, y_train, epochs=10, batch_size=1024,
               validation_data=(x_test, y_test), callbacks=[log, checkpoint])
 
     model.save_weights(f"./saved-models/{site}_lstm_trained.h5")
@@ -62,39 +68,51 @@ def train_lstmnet(site):
 
 if __name__ == "__main__":
 
+    adhd = {0: "No ADHD", 1: "ADHD 1", 2: "ADHD 2", 3 : "ADHD 3"}
 
-    for site in sites:
-        subs = []
+    site = sites[0]
+    subs = []
 
-        pheno = pd.read_csv(os.path.join(dir_adhd200, f"{site}_athena", f"{site}_preproc", f"{site}_phenotypic.csv"))
-    
-        for ind in tqdm.tqdm(pheno.index):
-            subID = pheno["ScanDir ID"][ind]
-            subs.append(subID)
+    pheno = pd.read_csv(os.path.join(dir_adhd200, f"{site}_athena", f"{site}_preproc", f"{site}_phenotypic.csv"))
+    adhdRows = pd.read_csv(f"../feature-extraction/features/{site}_adhd_rows_func.csv")
+    controlRows = pd.read_csv(f"../feature-extraction/features/{site}_control_rows_func.csv")
 
-        pred_caps = train_capsnet(site)
-        pred_lstm = train_lstmnet(site)
+    # subID, number of rows
+    rows = pd.concat([adhdRows, controlRows]).to_numpy() # shape: all subs, 2
 
-    # read the csv for rows for particular site
-    # rows have final index of each subject, can use to figure out 
-    #   which rows of the pred_lstm belong to which subject (have to have matching dimensions
-    #   of both pred_caps and pred_lstm).
+    capsnet = trainCapsNet(site)
+    lstmnet = trainLSTMNet(site)
 
+    pd.DataFrame(capsnet).to_csv("result/pred_caps.csv", index = False)
+    pd.DataFrame(lstmnet).to_csv("result/pred_lstm.csv", index = False) 
 
-    # print(pred_caps.shape) # 16, 4; num of test scans, output shape
-    # print(pred_lstm.shape) # 410, 4; num of test rows, output shape
+    new_pred_lstm = np.empty((4))
+    temp_lstmnet = lstmnet
+    flag = 0
 
+    for sub, numRows in rows[::-1]:
+        if not flag:
+            shape = temp_lstmnet.shape
+            if shape[0] < numRows:
+                numRows = shape[0]
+                flag = 1
 
+            preds = np.mean(temp_lstmnet[-numRows:], axis = 0)
+            temp_lstmnet = temp_lstmnet[:-numRows] 
+            new_pred_lstm = np.vstack([preds, new_pred_lstm])
+        else:
+            break
 
-    # models = [getCapsNet(), getLSTMNet()]
+    new_pred_lstm = new_pred_lstm[:-2]
 
-    # # lstmnet = KerasClassifier(getLSTMNet, epochs=1, verbose=True)
+    final_pred = np.empty((4))
 
-    # inputs = [layers.Input(shape=()), layers.Input(shape=x_train.shape[1:])]
-    # inputCaps = 
-    # inputLSTM = 
-    
-    # ensemble_output = layers.Average()(models)
-    # ensemble_model = keras.Model(inputs=models, outputs=ensemble_output)
+    for idx, pred in enumerate(new_pred_lstm):
+        p = [(pred[0] + pred_caps[idx][0])/2, (pred[1] + pred_caps[idx][1])/2, (pred[2] + pred_caps[idx][2])/2, (pred[3] + pred_caps[idx][3])]
 
-    # ensemble_model.summary()
+        final_pred = np.vstack([final_pred, p])
+
+    final_pred = final_pred[1:]
+
+    for pred in final_pred:
+        print(adhd[np.argmax(pred)])

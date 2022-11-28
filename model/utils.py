@@ -7,17 +7,10 @@ from keras.utils import to_categorical
 import os
 
 def load_data_csv(site):
-    adhd = pd.read_csv(
-        f"../feature-extraction/features/{site}_adhd_func.csv")
-    control = pd.read_csv(
-        f"../feature-extraction/features/{site}_control_func.csv")
-
-    data = pd.concat([adhd, control])
+    data = pd.read_csv(f"../feature-extraction/features/{site}_func.csv")
 
     x = data.iloc[1:, 0:-1]
     y = data.iloc[1:, -1]
-    # x = data.iloc[1:2048, 0:-1]
-    # y = data.iloc[1:2048, -1]
 
     ss = StandardScaler()
     x = ss.fit_transform(x)
@@ -26,7 +19,7 @@ def load_data_csv(site):
     y = y.astype('float32')
 
     x_train, x_test, y_train, y_test = train_test_split(
-        x, y, test_size=0.2, random_state=0)
+        x, y, test_size=0.2, random_state=0, shuffle = False)
 
     return (x_train, y_train), (x_test, y_test)
 

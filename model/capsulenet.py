@@ -13,6 +13,7 @@ from keras.utils import to_categorical
 from utils import load_data_mri
 
 # K.set_image_data_format('channels_last')
+sites = ["KKI", "Peking_1", "Peking_2", "Peking_3"]
 
 
 def CapsNet(input_shape, n_class, routings, batch_size):
@@ -131,7 +132,7 @@ def get_model():
     if not os.path.exists(args.save_dir):
         os.makedirs(args.save_dir)
 
-    (x_train, y_train), (x_test, y_test) = load_data_mri()
+    (x_train, y_train), (x_test, y_test) = load_data_mri(sites[0])
 
     model, eval_model = CapsNet(input_shape=x_train.shape[1:],
                                 n_class=4,

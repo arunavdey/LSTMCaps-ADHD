@@ -57,7 +57,7 @@ def smri(subject, dx, site):
 
     return df
 
-def fmri(subject, dx, site):
+def fmri(subject, dx, age, gender, handedness, piq, viq, site):
     falff_path = os.path.join(dir_adhd200, f"{site}_athena", f"{site}_falff_filtfix",
                               f"{subject}", f"falff_{subject}_session_1_rest_1.nii.gz")
     falff = nib.load(falff_path).get_fdata()  # 49, 58, 47
@@ -71,7 +71,7 @@ def fmri(subject, dx, site):
     fc = nib.load(fc_path).get_fdata()  # 49, 58, 47, 1, 10
 
     features = ['x', 'y', 'z', 'fc1', 'fc2', 'fc3', 'fc4', 'fc5', 'fc6',
-                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'dx']  # 16
+                'fc7', 'fc8', 'fc9', 'fc10', 'falff', 'reho', 'age', 'gender', 'handedness', 'piq', 'viq', 'dx']  # 20 
 
     df = pd.DataFrame(columns=features)
 
@@ -88,6 +88,11 @@ def fmri(subject, dx, site):
                         row.append(fc[x][y][z][0][i])
                     row.append(falff[x][y][z])
                     row.append(reho[x][y][z])
+                    row.append(age)
+                    row.append(gender)
+                    row.append(handedness)
+                    row.append(piq)
+                    row.append(viq)
                     row.append(dx)
                     df.loc[len(df.index)] = row
 
@@ -112,23 +117,35 @@ if __name__ == "__main__":
 
             subID = pheno["ScanDir ID"][ind]
             dx = pheno["DX"][ind]
+            age = pheno["Age"][ind]
+            gender = pheno["Gender"][ind]
+            handedness = pheno["Handedness"][ind]
+            piq = pheno["Performance IQ"][ind]
+            viq = pheno["Verbal IQ"][ind]
 
             print(f"Current subject: {subID}\nSite: {site}")
 
-            if dx == 0:
-                controlFunc = pd.concat([controlFunc, fmri(subID, dx, site)], axis=0)
-                lastRow = controlFunc.tail(1).index[0]
-                # controlAnat = pd.concat([controlAnat, smri(subID, dx, site)], axis=0)
-                controlRows.loc[len(controlRows.index)] = [subID, lastRow]
-            else:
-                adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, site)], axis=0)
-                lastRow = adhdFunc.tail(1).index[0]
-                # adhdAnat = pd.concat([adhdAnat, smri(subID, dx, site)], axis=0)
-                adhdRows.loc[len(adhdRows.index)] = [subID, lastRow]
+            controlFunc = pd.concat([controlFunc, fmri(subID, dx, age, gender, handedness, piq, viq, site)], axis=0)
+            lastRow = controlFunc.tail(1).index[0]
+            # controlAnat = pd.concat([controlAnat, smri(subID, dx, site)], axis=0)
+            controlRows.loc[len(controlRows.index)] = [subID, lastRow]
 
-        adhdFunc.to_csv(f"features/{site}_adhd_func.csv", index=False)
-        controlFunc.to_csv(f"features/{site}_control_func.csv", index=False)
-        adhdAnat.to_csv(f"features/{site}_adhd_anat.csv", index=False)
-        controlAnat.to_csv(f"features/{site}_control_anat.csv", index=False)
-        adhdRows.to_csv(f"features/{site}_adhd_rows_func.csv", index=False)
-        controlRows.to_csv(f"features/{site}_control_rows_func.csv", index=False)
+            # if dx == 0:
+            #     controlFunc = pd.concat([controlFunc, fmri(subID, dx, site)], axis=0)
+            #     lastRow = controlFunc.tail(1).index[0]
+            #     # controlAnat = pd.concat([controlAnat, smri(subID, dx, site)], axis=0)
+            #     controlRows.loc[len(controlRows.index)] = [subID, lastRow]
+            # else:
+            #     adhdFunc = pd.concat([adhdFunc, fmri(subID, dx, site)], axis=0)
+            #     lastRow = adhdFunc.tail(1).index[0]
+            #     # adhdAnat = pd.concat([adhdAnat, smri(subID, dx, site)], axis=0)
+            #     adhdRows.loc[len(adhdRows.index)] = [subID, lastRow]
+
+        # adhdFunc.to_csv(f"features/{site}_adhd_func.csv", index=False)
+        controlFunc.to_csv(f"features/{site}_func.csv", index=False)
+        # adhdAnat.to_csv(f"features/{site}_adhd_anat.csv", index=False)
+        # controlAnat.to_csv(f"features/{site}_control_anat.csv", index=False)
+        # adhdRows.to_csv(f"features/{site}_adhd_rows_func.csv", index=False)
+        controlRows.to_csv(f"features/{site}_rows_func.csv", index=False)
+
+        break
