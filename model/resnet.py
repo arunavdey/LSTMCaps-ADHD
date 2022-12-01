@@ -12,7 +12,7 @@ from keras.preprocessing.image import ImageDataGenerator
 from keras.regularizers import l2
 from keras import backend as K
 from keras.models import Model
-from capsulenet import load_data
+from utils import load_data_mri
 
 def lr_schedule(epoch):
     lr = 1e-3
@@ -129,7 +129,7 @@ version = 2
 
 depth = n * 9 + 2
 
-(x_train, y_train), (x_test, y_test) = load_data()
+(x_train, y_train), (x_test, y_test) = load_data_mri('KKI')
 
 input_shape = x_train.shape[1:]
 
@@ -151,7 +151,7 @@ model.summary()
 # print(model_type)
 
 save_dir = os.path.join(os.getcwd(), 'saved-models')
-model_name = 'resnet_model.{epoch:03d}.h5'
+model_name = 'resnet_model.h5'
 if not os.path.isdir(save_dir):
     os.makedirs(save_dir)
 filepath = os.path.join(save_dir, model_name)

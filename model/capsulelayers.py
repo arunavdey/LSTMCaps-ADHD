@@ -49,7 +49,7 @@ def squash(vectors, axis=-1):
 
 class CapsuleLayer(layers.Layer):
     def __init__(self, num_capsule, dim_capsule, routings=3,
-                 kernel_initializer='lecun_uniform',
+                 kernel_initializer='glorot_uniform',
                  **kwargs):
         super(CapsuleLayer, self).__init__(**kwargs)
         self.num_capsule = num_capsule
@@ -85,6 +85,7 @@ class CapsuleLayer(layers.Layer):
         assert self.routings > 0, 'The routings should be > 0.'
         for i in range(self.routings):
             c = tf.nn.softmax(b, axis=1)
+            # c = tf.nn.sigmoid(b)
             outputs = squash(tf.matmul(c, inputs_hat))
 
             if i < self.routings - 1:
